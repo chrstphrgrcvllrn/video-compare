@@ -7,6 +7,7 @@ const THEME_KEY = "video-preview-theme";
 const CONTROLS_KEY = "video-preview-controls";
 const NOTEPAD_CONTENT_KEY = "video-preview-notepad-content";
 const NOTEPAD_OPEN_KEY = "video-preview-notepad-open";
+const RELEASE_NOTES_SEEN_KEY = "video-preview-release-notes-seen";
 
 const ICON = {
     upload: '<path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />',
@@ -55,6 +56,7 @@ const RELEASE_NOTES = [
             "Click any video to play/pause just that one, with an icon that fades after a second",
             "Added a Notepad panel with rich-text formatting to paste copy and compare it against the video preview",
             "Combined Sort by and Dimension into one Sort & Filter dropdown, with multi-select dimension checkboxes",
+            "Added a red dot on the bell icon when there's a release you haven't seen yet",
         ],
     },
 ];
@@ -89,6 +91,7 @@ app.innerHTML = `
                     <div class="release-notes-wrap">
                         <button id="releaseNotesToggle" class="icon-button" type="button" title="Release notes" aria-label="Release notes">
                             ${icon("bell")}
+                            <span id="releaseNotesDot" class="notification-dot" hidden></span>
                         </button>
                         <div id="releaseNotesPanel" class="release-notes-panel" hidden>
                             <div class="release-notes-header">
@@ -204,6 +207,7 @@ const clearBtn = document.getElementById("clearBtn");
 const themeToggle = document.getElementById("themeToggle");
 const releaseNotesToggle = document.getElementById("releaseNotesToggle");
 const releaseNotesPanel = document.getElementById("releaseNotesPanel");
+const releaseNotesDot = document.getElementById("releaseNotesDot");
 const releaseNotesClose = document.getElementById("releaseNotesClose");
 const controls = document.getElementById("controls");
 const sortFilterToggle = document.getElementById("sortFilterToggle");
@@ -844,8 +848,33 @@ themeToggle.addEventListener("click", () => {
     applyTheme(state.theme === "dark" ? "light" : "dark");
 });
 
+function updateReleaseNotesDot() {
+    const latest = RELEASE_NOTES[0] && RELEASE_NOTES[0].date;
+    let seen = null;
+    try {
+        seen = localStorage.getItem(RELEASE_NOTES_SEEN_KEY);
+    } catch {
+        /* localStorage unavailable */
+    }
+    releaseNotesDot.hidden = !latest || seen === latest;
+}
+
+function markReleaseNotesSeen() {
+    const latest = RELEASE_NOTES[0] && RELEASE_NOTES[0].date;
+    if (!latest) return;
+    try {
+        localStorage.setItem(RELEASE_NOTES_SEEN_KEY, latest);
+    } catch {
+        /* localStorage unavailable */
+    }
+    releaseNotesDot.hidden = true;
+}
+
 releaseNotesToggle.addEventListener("click", () => {
     releaseNotesPanel.hidden = !releaseNotesPanel.hidden;
+    if (!releaseNotesPanel.hidden) {
+        markReleaseNotesSeen();
+    }
 });
 
 releaseNotesClose.addEventListener("click", () => {
@@ -1021,3 +1050,4 @@ initTheme();
 applyControlsState(loadControlsState());
 syncMuteToggleBtn();
 initNotepad();
+updateReleaseNotesDot();

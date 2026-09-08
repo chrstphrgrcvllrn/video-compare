@@ -149,6 +149,7 @@ body {
 }
 
 .icon-button {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -161,6 +162,21 @@ body {
     cursor: pointer;
     box-shadow: var(--shadow-xs);
     transition: background 0.15s;
+}
+
+.notification-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #ef4444;
+    border: 1.5px solid var(--bg-surface);
+}
+
+.notification-dot[hidden] {
+    display: none;
 }
 
 .icon-button:hover {
@@ -286,6 +302,10 @@ body {
     transition:
         background 0.15s,
         border-color 0.15s;
+}
+
+.btn[hidden] {
+    display: none;
 }
 
 .btn-primary {
