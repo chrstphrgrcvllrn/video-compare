@@ -1,8 +1,12 @@
+import Quill from "quill";
+import "quill/dist/quill.snow.css";
 import "./style.css";
 
 const VIDEO_EXT = [".mp4", ".mov", ".webm", ".avi", ".ogg"];
 const THEME_KEY = "video-preview-theme";
 const CONTROLS_KEY = "video-preview-controls";
+const NOTEPAD_CONTENT_KEY = "video-preview-notepad-content";
+const NOTEPAD_OPEN_KEY = "video-preview-notepad-open";
 
 const ICON = {
     upload: '<path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />',
@@ -26,6 +30,7 @@ const ICON = {
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
     play: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />',
     pause: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />',
+    note: '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />',
 };
 
 function icon(name) {
@@ -47,6 +52,7 @@ const RELEASE_NOTES = [
             "Added a slider view to step through videos one at a time",
             "Added a Playing/Paused toast when using the spacebar shortcut",
             "Click any video to play/pause just that one, with an icon that fades after a second",
+            "Added a Notepad panel with rich-text formatting to paste copy and compare it against the video preview",
         ],
     },
 ];
@@ -75,6 +81,9 @@ app.innerHTML = `
                     <p class="hint">Press <kbd>Space</kbd> to play/pause all videos.</p>
                 </div>
                 <div class="header-actions">
+                    <button id="notepadToggle" class="icon-button" type="button" title="Notepad" aria-label="Toggle notepad">
+                        ${icon("note")}
+                    </button>
                     <div class="release-notes-wrap">
                         <button id="releaseNotesToggle" class="icon-button" type="button" title="Release notes" aria-label="Release notes">
                             ${icon("bell")}
@@ -156,6 +165,17 @@ app.innerHTML = `
                 <button id="sliderNextBtn" class="slider-arrow slider-arrow-next" type="button" title="Next video" aria-label="Next video" hidden>${icon("chevronRight")}</button>
             </div>
         </div>
+
+        <aside id="notepadPanel" class="notepad-panel" hidden>
+            <div class="notepad-header">
+                <span class="notepad-title">Notepad</span>
+                <div class="notepad-header-actions">
+                    <button id="notepadClearBtn" class="notepad-icon-btn" type="button" title="Clear notes" aria-label="Clear notes">${icon("trash")}</button>
+                    <button id="notepadCloseBtn" class="notepad-icon-btn" type="button" aria-label="Close notepad">&times;</button>
+                </div>
+            </div>
+            <div id="notepadEditor" class="notepad-editor"></div>
+        </aside>
     </div>
 
     <div id="playbackToast" class="toast" hidden>
@@ -190,6 +210,22 @@ const videoStage = document.getElementById("videoStage");
 const playbackToast = document.getElementById("playbackToast");
 const playbackToastIcon = document.getElementById("playbackToastIcon");
 const playbackToastText = document.getElementById("playbackToastText");
+const notepadToggle = document.getElementById("notepadToggle");
+const notepadPanel = document.getElementById("notepadPanel");
+const notepadCloseBtn = document.getElementById("notepadCloseBtn");
+const notepadClearBtn = document.getElementById("notepadClearBtn");
+
+const notepadEditor = new Quill("#notepadEditor", {
+    theme: "snow",
+    placeholder: "Paste copy here to compare against the preview...",
+    modules: {
+        toolbar: [
+            ["bold", "italic", "underline", "strike"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["clean"],
+        ],
+    },
+});
 
 function isVideoFile(file) {
     if (file.type && file.type.startsWith("video/")) return true;
@@ -689,7 +725,9 @@ muteToggleBtn.addEventListener("click", () => {
 });
 
 unfocusAllBtn.addEventListener("click", () => {
-    videoGrid.querySelectorAll(".video-item.focused").forEach((el) => el.classList.remove("focused"));
+    videoGrid
+        .querySelectorAll(".video-item.focused")
+        .forEach((el) => el.classList.remove("focused"));
     videoGrid.classList.remove("focus-mode");
 });
 
@@ -761,6 +799,77 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+let notepadCloseTimer = null;
+
+function setNotepadOpen(open) {
+    clearTimeout(notepadCloseTimer);
+    notepadToggle.classList.toggle("active", open);
+
+    if (open) {
+        notepadPanel.hidden = false;
+        // Force reflow so the transition runs from the closed state.
+        void notepadPanel.offsetWidth;
+        notepadPanel.classList.add("open");
+    } else {
+        notepadPanel.classList.remove("open");
+        notepadCloseTimer = setTimeout(() => {
+            notepadPanel.hidden = true;
+        }, 220);
+    }
+
+    try {
+        localStorage.setItem(NOTEPAD_OPEN_KEY, open ? "1" : "0");
+    } catch {
+        /* localStorage unavailable */
+    }
+}
+
+function saveNotepadContent() {
+    try {
+        localStorage.setItem(NOTEPAD_CONTENT_KEY, JSON.stringify(notepadEditor.getContents()));
+    } catch {
+        /* localStorage unavailable */
+    }
+}
+
+notepadToggle.addEventListener("click", () => {
+    setNotepadOpen(notepadPanel.hidden);
+});
+
+notepadCloseBtn.addEventListener("click", () => setNotepadOpen(false));
+
+notepadClearBtn.addEventListener("click", () => {
+    notepadEditor.setText("");
+    saveNotepadContent();
+    notepadEditor.focus();
+});
+
+notepadEditor.on("text-change", (delta, oldDelta, source) => {
+    if (source !== "user") return;
+    saveNotepadContent();
+});
+
+function initNotepad() {
+    try {
+        const savedContent = localStorage.getItem(NOTEPAD_CONTENT_KEY);
+        if (savedContent) {
+            notepadEditor.setContents(JSON.parse(savedContent));
+        } else {
+            const legacyText = localStorage.getItem("video-preview-notepad-text");
+            if (legacyText) {
+                notepadEditor.setText(legacyText);
+                saveNotepadContent();
+            }
+        }
+
+        if (localStorage.getItem(NOTEPAD_OPEN_KEY) === "1") {
+            setNotepadOpen(true);
+        }
+    } catch {
+        /* localStorage unavailable */
+    }
+}
+
 document.querySelectorAll(".speed-button").forEach((button) => {
     button.addEventListener("click", () => {
         const speed = Number(button.dataset.speed);
@@ -800,7 +909,9 @@ function showPlaybackToast(isPlaying) {
 }
 
 function toggleAllPlayback() {
-    const scope = videoGrid.classList.contains("focus-mode") ? ".video-item.focused video" : "video";
+    const scope = videoGrid.classList.contains("focus-mode")
+        ? ".video-item.focused video"
+        : "video";
     const videos = Array.from(videoGrid.querySelectorAll(scope));
     if (videos.length === 0) return;
 
@@ -820,7 +931,13 @@ document.addEventListener("keydown", (e) => {
     if (e.code !== "Space") return;
 
     const tag = e.target.tagName;
-    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || tag === "BUTTON" || e.target.isContentEditable) {
+    if (
+        tag === "INPUT" ||
+        tag === "SELECT" ||
+        tag === "TEXTAREA" ||
+        tag === "BUTTON" ||
+        e.target.isContentEditable
+    ) {
         return;
     }
 
@@ -837,3 +954,4 @@ window.addEventListener("resize", () => {
 initTheme();
 applyControlsState(loadControlsState());
 syncMuteToggleBtn();
+initNotepad();
