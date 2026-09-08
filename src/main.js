@@ -45,6 +45,7 @@ app.innerHTML = `
             <header class="panel-header">
                 <div class="header-text">
                     <p class="subtitle">Select local video files to preview, sort, and compare — nothing leaves your browser.</p>
+                    <p class="hint">Press <kbd>Space</kbd> to play/pause all videos.</p>
                 </div>
                 <div class="header-actions">
                     <button id="themeToggle" class="icon-button" type="button" title="Toggle theme" aria-label="Toggle theme">
@@ -525,6 +526,32 @@ document.querySelectorAll(".speed-button").forEach((button) => {
 
         saveControlsState();
     });
+});
+
+function toggleAllPlayback() {
+    const videos = Array.from(videoGrid.querySelectorAll("video"));
+    if (videos.length === 0) return;
+
+    const anyPlaying = videos.some((video) => !video.paused);
+    videos.forEach((video) => {
+        if (anyPlaying) {
+            video.pause();
+        } else {
+            video.play().catch(() => {});
+        }
+    });
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.code !== "Space") return;
+
+    const tag = e.target.tagName;
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || tag === "BUTTON" || e.target.isContentEditable) {
+        return;
+    }
+
+    e.preventDefault();
+    toggleAllPlayback();
 });
 
 initTheme();

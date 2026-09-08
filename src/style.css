@@ -124,6 +124,23 @@ body {
     font-size: 14px;
 }
 
+.header-text .hint {
+    margin: 6px 0 0;
+    color: var(--text-tertiary);
+    font-size: 13px;
+}
+
+.header-text .hint kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    background: var(--bg-panel);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
 .header-actions {
     display: flex;
     align-items: center;
