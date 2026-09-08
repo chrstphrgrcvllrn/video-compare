@@ -818,6 +818,9 @@ body {
 
 .notepad-panel {
     width: 0;
+    height: 100vh;
+    position: sticky;
+    top: 0;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -972,6 +975,8 @@ body {
 
     .notepad-panel {
         width: 100%;
+        height: auto;
+        position: static;
         max-height: 0;
         border-left: none;
         border-top: 1px solid transparent;
