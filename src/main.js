@@ -102,7 +102,7 @@ app.innerHTML = `
                     <div class="release-notes-wrap">
                         <button id="releaseNotesToggle" class="icon-button" type="button" title="Release notes" aria-label="Release notes">
                             ${icon("bell")}
-                            <span id="releaseNotesDot" class="notification-dot" hidden></span>
+                            <span id="releaseNotesDot" class="notification-dot"></span>
                         </button>
                         <div id="releaseNotesPanel" class="release-notes-panel" hidden>
                             <div class="release-notes-header">
@@ -488,10 +488,15 @@ function slideToIndex(step) {
     incoming.classList.add("slide-anim");
     incoming.classList.add(direction === "next" ? "slide-from-right" : "slide-from-left");
 
+    void outgoing.offsetWidth;
     void incoming.offsetWidth;
 
-    outgoing.classList.add(direction === "next" ? "slide-exit-left" : "slide-exit-right");
-    incoming.classList.remove("slide-from-right", "slide-from-left");
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            outgoing.classList.add(direction === "next" ? "slide-exit-left" : "slide-exit-right");
+            incoming.classList.remove("slide-from-right", "slide-from-left");
+        });
+    });
 
     const cleanup = () => {
         Array.from(videoGrid.querySelectorAll(".video-item")).forEach((el) => {
@@ -1021,7 +1026,7 @@ function updateReleaseNotesDot() {
     } catch {
         /* localStorage unavailable */
     }
-    releaseNotesDot.hidden = !latest || seen === latest;
+    releaseNotesDot.classList.toggle("unread", !!latest && seen !== latest);
 }
 
 function markReleaseNotesSeen() {
@@ -1032,7 +1037,7 @@ function markReleaseNotesSeen() {
     } catch {
         /* localStorage unavailable */
     }
-    releaseNotesDot.hidden = true;
+    releaseNotesDot.classList.remove("unread");
 }
 
 infoToastToggle.addEventListener("click", () => {
