@@ -433,6 +433,54 @@ body {
     background-size: 14px 14px;
 }
 
+.number-spinner {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.spinner-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    border: none;
+    background: var(--gray-50);
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.spinner-btn:hover {
+    background: var(--border-default);
+}
+
+.spinner-input {
+    appearance: none;
+    -moz-appearance: textfield;
+    width: 40px;
+    border: none;
+    border-left: 1px solid var(--border-default);
+    border-right: 1px solid var(--border-default);
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    padding: 4px 0;
+}
+
+.spinner-input::-webkit-outer-spin-button,
+.spinner-input::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
 .sort-filter-wrap {
     position: relative;
 }
@@ -701,6 +749,7 @@ body {
 }
 
 .mute-button,
+.replay-button,
 .focus-button {
     display: flex;
     align-items: center;
@@ -720,12 +769,14 @@ body {
 }
 
 .mute-button .icon,
+.replay-button .icon,
 .focus-button .icon {
     width: 15px;
     height: 15px;
 }
 
 .mute-button:hover,
+.replay-button:hover,
 .focus-button:hover {
     background: var(--gray-50);
     color: var(--text-secondary);
@@ -735,10 +786,13 @@ body {
     color: var(--brand-600);
 }
 
+.replay-button,
 .focus-button {
     opacity: 0;
 }
 
+.video-item:hover .replay-button,
+.replay-button:focus-visible,
 .video-item:hover .focus-button,
 .focus-button:focus-visible {
     opacity: 1;

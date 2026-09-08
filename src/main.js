@@ -30,8 +30,6 @@ const ICON = {
     funnel: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />',
     chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
-    arrowsExpand:
-        '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />',
     megaphone:
         '<path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46" />',
     play: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />',
@@ -65,6 +63,9 @@ const RELEASE_NOTES = [
             "Added a sliding transition when navigating between videos in Slider View",
             "Combined Size and Per Row into one Size & Layout dropdown",
             "Moved the intro text to a megaphone icon toast next to the bell, and merged Select Videos onto the same row as the header buttons",
+            "Replaced the Size & Layout dropdown with separate number-spinner controls for Size and Per row",
+            "Renamed Refresh to Replay, and added a per-video Replay button next to mute/unmute",
+            "Made Labels and Scrubber icon-only, and the release notes dot always visible (red when unread, gray when read)",
         ],
     },
 ];
@@ -77,7 +78,7 @@ const state = {
     scrubberVisible: true,
     dimensionFilters: new Set(),
     sizeScale: 0.25,
-    perRow: "default",
+    perRow: 0,
     theme: "light",
     viewMode: "grid",
     sliderIndex: 0,
@@ -162,72 +163,27 @@ app.innerHTML = `
                         </div>
                     </div>
                 </div>
-                <div class="sort-filter-wrap">
-                    <button id="layoutToggle" class="chip-button" type="button">
-                        ${icon("arrowsExpand")}<span class="btn-label">Size &amp; Layout</span>
-                    </button>
-                    <div id="layoutPanel" class="sort-filter-panel" hidden>
-                        <div class="sort-filter-section">
-                            <div class="sort-filter-section-title">Size</div>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sizeRadio" value="1" />
-                                <span>100%</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sizeRadio" value="0.75" />
-                                <span>75%</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sizeRadio" value="0.5" />
-                                <span>50%</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sizeRadio" value="0.25" checked />
-                                <span>25%</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sizeRadio" value="0.15" />
-                                <span>15%</span>
-                            </label>
-                        </div>
-                        <div class="sort-filter-section">
-                            <div class="sort-filter-section-title">Per row</div>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="default" checked />
-                                <span>Default</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="1" />
-                                <span>1</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="2" />
-                                <span>2</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="3" />
-                                <span>3</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="4" />
-                                <span>4</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="5" />
-                                <span>5</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="perRowRadio" value="6" />
-                                <span>6</span>
-                            </label>
-                        </div>
+                <div class="sort-group">
+                    <label for="sizeInput">Size</label>
+                    <div class="number-spinner" id="sizeSpinner">
+                        <button type="button" class="spinner-btn" data-step="-1" aria-label="Decrease size">&minus;</button>
+                        <input id="sizeInput" class="spinner-input" type="number" min="5" max="100" step="5" value="25" inputmode="numeric" />
+                        <button type="button" class="spinner-btn" data-step="1" aria-label="Increase size">&plus;</button>
                     </div>
                 </div>
-                <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
+                <div class="sort-group">
+                    <label for="perRowInput">Per row</label>
+                    <div class="number-spinner" id="perRowSpinner">
+                        <button type="button" class="spinner-btn" data-step="-1" aria-label="Decrease per row">&minus;</button>
+                        <input id="perRowInput" class="spinner-input" type="number" min="0" max="12" step="1" value="0" inputmode="numeric" />
+                        <button type="button" class="spinner-btn" data-step="1" aria-label="Increase per row">&plus;</button>
+                    </div>
+                </div>
+                <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Replay</span></button>
                 <button id="muteToggleBtn" class="chip-button chip-button-icon" type="button" title="Mute All" aria-label="Mute All">${icon("speakerOff")}</button>
                 <button id="unfocusAllBtn" class="chip-button chip-button-icon" type="button" title="Unfocus All" aria-label="Unfocus All">${icon("focus")}</button>
-                <button id="labelsBtn" class="chip-button active" type="button">${icon("tag")}<span class="btn-label">Labels</span></button>
-                <button id="scrubberBtn" class="chip-button active" type="button">${icon("sliders")}<span class="btn-label">Scrubber</span></button>
+                <button id="labelsBtn" class="chip-button chip-button-icon active" type="button" title="Labels" aria-label="Toggle labels">${icon("tag")}</button>
+                <button id="scrubberBtn" class="chip-button chip-button-icon active" type="button" title="Scrubber" aria-label="Toggle scrubber">${icon("sliders")}</button>
                 <div id="viewModeSwitch" class="view-mode-switch">
                     <button id="sliderModeBtn" class="view-mode-option" type="button" title="Slider view" aria-label="Slider view">${icon("singleFrame")}</button>
                     <button id="gridModeBtn" class="view-mode-option active" type="button" title="Grid view" aria-label="Grid view">${icon("grid")}</button>
@@ -277,8 +233,10 @@ const controls = document.getElementById("controls");
 const sortFilterToggle = document.getElementById("sortFilterToggle");
 const sortFilterPanel = document.getElementById("sortFilterPanel");
 const dimensionCheckboxList = document.getElementById("dimensionCheckboxList");
-const layoutToggle = document.getElementById("layoutToggle");
-const layoutPanel = document.getElementById("layoutPanel");
+const sizeInput = document.getElementById("sizeInput");
+const sizeSpinner = document.getElementById("sizeSpinner");
+const perRowInput = document.getElementById("perRowInput");
+const perRowSpinner = document.getElementById("perRowSpinner");
 const refreshBtn = document.getElementById("refreshBtn");
 const muteToggleBtn = document.getElementById("muteToggleBtn");
 const unfocusAllBtn = document.getElementById("unfocusAllBtn");
@@ -386,7 +344,7 @@ function refreshDimensionOptions() {
 }
 
 function isPerRowGridActive() {
-    return state.perRow !== "default" && state.viewMode !== "slider";
+    return state.perRow > 0 && state.viewMode !== "slider";
 }
 
 function applySizeToItem(wrapper, video) {
@@ -612,17 +570,17 @@ function applyControlsState(saved) {
         });
     }
 
-    const validSizes = [1, 0.75, 0.5, 0.25, 0.15];
-    if (validSizes.includes(saved.sizeScale)) {
-        state.sizeScale = saved.sizeScale;
-        setRadioValue(layoutPanel, "sizeRadio", String(saved.sizeScale));
+    const sizeScale = Number(saved.sizeScale);
+    if (Number.isFinite(sizeScale) && sizeScale >= 0.05 && sizeScale <= 1) {
+        state.sizeScale = sizeScale;
+        sizeInput.value = String(Math.round(sizeScale * 100));
         applySizeToAll();
     }
 
-    const validPerRow = ["default", "1", "2", "3", "4", "5", "6"];
-    if (validPerRow.includes(saved.perRow)) {
-        state.perRow = saved.perRow;
-        setRadioValue(layoutPanel, "perRowRadio", saved.perRow);
+    const perRow = Number(saved.perRow);
+    if (Number.isInteger(perRow) && perRow >= 0 && perRow <= 12) {
+        state.perRow = perRow;
+        perRowInput.value = String(perRow);
         applyPerRow();
     }
 
@@ -680,9 +638,24 @@ function buildItem(item) {
         video.muted = !video.muted;
     });
 
+    const replayBtn = document.createElement("button");
+    replayBtn.type = "button";
+    replayBtn.className = "replay-button";
+    replayBtn.title = "Replay this video";
+    replayBtn.setAttribute("aria-label", "Replay this video");
+    replayBtn.innerHTML = icon("refresh");
+
+    replayBtn.addEventListener("click", () => {
+        video.pause();
+        video.currentTime = 0;
+        video.playbackRate = state.speed;
+        video.play().catch(() => {});
+    });
+
     const videoToolbar = document.createElement("div");
     videoToolbar.className = "video-toolbar";
     videoToolbar.appendChild(muteBtn);
+    videoToolbar.appendChild(replayBtn);
     videoToolbar.appendChild(focusBtn);
 
     const scrubber = document.createElement("input");
@@ -918,39 +891,43 @@ dimensionCheckboxList.addEventListener("change", (e) => {
     applyFilters();
 });
 
-layoutToggle.addEventListener("click", () => {
-    layoutPanel.hidden = !layoutPanel.hidden;
-});
+function clampInput(input) {
+    const min = Number(input.min);
+    const max = Number(input.max);
+    let value = Number(input.value);
+    if (!Number.isFinite(value)) value = min;
+    value = Math.min(max, Math.max(min, value));
+    input.value = String(value);
+    return value;
+}
 
-document.addEventListener("click", (e) => {
-    if (layoutPanel.hidden) return;
-    if (e.target === layoutToggle || layoutToggle.contains(e.target)) return;
-    if (layoutPanel.contains(e.target)) return;
-    layoutPanel.hidden = true;
-});
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !layoutPanel.hidden) {
-        layoutPanel.hidden = true;
-    }
-});
-
-layoutPanel.querySelectorAll('input[name="sizeRadio"]').forEach((radio) => {
-    radio.addEventListener("change", () => {
-        if (!radio.checked) return;
-        state.sizeScale = Number(radio.value);
-        applySizeToAll();
-        saveControlsState();
+sizeSpinner.querySelectorAll(".spinner-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const step = Number(btn.dataset.step) * Number(sizeInput.step);
+        sizeInput.value = String(Number(sizeInput.value) + step);
+        sizeInput.dispatchEvent(new Event("change", { bubbles: true }));
     });
 });
 
-layoutPanel.querySelectorAll('input[name="perRowRadio"]').forEach((radio) => {
-    radio.addEventListener("change", () => {
-        if (!radio.checked) return;
-        state.perRow = radio.value;
-        applyPerRow();
-        saveControlsState();
+perRowSpinner.querySelectorAll(".spinner-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const step = Number(btn.dataset.step) * Number(perRowInput.step);
+        perRowInput.value = String(Number(perRowInput.value) + step);
+        perRowInput.dispatchEvent(new Event("change", { bubbles: true }));
     });
+});
+
+sizeInput.addEventListener("change", () => {
+    const percent = clampInput(sizeInput);
+    state.sizeScale = percent / 100;
+    applySizeToAll();
+    saveControlsState();
+});
+
+perRowInput.addEventListener("change", () => {
+    state.perRow = clampInput(perRowInput);
+    applyPerRow();
+    saveControlsState();
 });
 
 refreshBtn.addEventListener("click", () => {
