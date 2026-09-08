@@ -12,11 +12,14 @@ const ICON = {
     tag: '<path d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path d="M6 6h.008v.008H6V6z" />',
     sliders:
         '<path d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />',
-    funnel: '<path d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />',
     sun: '<path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />',
     moon: '<path d="M21.752 15.002A9.72 9.72 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />',
     focus: '<path d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />',
     bell: '<path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />',
+    speakerOn:
+        '<path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
+    speakerOff:
+        '<path d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
 };
 
 function icon(name) {
@@ -30,7 +33,12 @@ function icon(name) {
 const RELEASE_NOTES = [
     {
         date: "September 8, 2026",
-        items: ["Added focus mode to spotlight a single video", "Added spacebar shortcut to play/pause all videos"],
+        items: [
+            "Added focus mode to spotlight one or more videos for comparison",
+            "Added spacebar shortcut to play/pause all videos",
+            "Added mute/unmute per video, plus Mute All and Unmute All",
+            "Removed the select/compare checkbox in favor of focus mode",
+        ],
     },
 ];
 
@@ -40,7 +48,6 @@ const state = {
     sort: { key: "name" },
     labelsVisible: true,
     scrubberVisible: true,
-    filterSelected: false,
     dimensionFilter: "all",
     sizeScale: 0.25,
     theme: "light",
@@ -116,9 +123,10 @@ app.innerHTML = `
                     </select>
                 </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
+                <button id="muteAllBtn" class="chip-button" type="button">${icon("speakerOff")}<span class="btn-label">Mute All</span></button>
+                <button id="unmuteAllBtn" class="chip-button" type="button">${icon("speakerOn")}<span class="btn-label">Unmute All</span></button>
                 <button id="labelsBtn" class="chip-button active" type="button">${icon("tag")}<span class="btn-label">Labels</span></button>
                 <button id="scrubberBtn" class="chip-button active" type="button">${icon("sliders")}<span class="btn-label">Scrubber</span></button>
-                <button id="compareBtn" class="chip-button" type="button">${icon("funnel")}<span class="btn-label">Show Selected Only</span></button>
                 <div id="speedToggle">
                     <button class="speed-button active" data-speed="1" type="button">1x</button>
                     <button class="speed-button" data-speed="0.5" type="button">0.5x</button>
@@ -145,10 +153,10 @@ const sortField = document.getElementById("sortField");
 const dimensionFilter = document.getElementById("dimensionFilter");
 const sizeSelect = document.getElementById("sizeSelect");
 const refreshBtn = document.getElementById("refreshBtn");
+const muteAllBtn = document.getElementById("muteAllBtn");
+const unmuteAllBtn = document.getElementById("unmuteAllBtn");
 const labelsBtn = document.getElementById("labelsBtn");
 const scrubberBtn = document.getElementById("scrubberBtn");
-const compareBtn = document.getElementById("compareBtn");
-const compareLabel = compareBtn.querySelector(".btn-label");
 const videoGrid = document.getElementById("videoGrid");
 
 function isVideoFile(file) {
@@ -177,13 +185,6 @@ function formatTime(seconds) {
 
 function updateToolbarVisibility() {
     controls.hidden = state.items.length === 0;
-}
-
-function updateCompareButtonLabel() {
-    const count = videoGrid.querySelectorAll(".video-item.selected").length;
-    compareLabel.textContent = state.filterSelected
-        ? "Show All"
-        : "Show Selected Only" + (count > 0 ? " (" + count + ")" : "");
 }
 
 function refreshDimensionOptions() {
@@ -227,11 +228,10 @@ function applySizeToAll() {
 
 function applyFilters() {
     videoGrid.querySelectorAll(".video-item").forEach((el) => {
-        const matchesSelection = !state.filterSelected || el.classList.contains("selected");
         const dimKey = el.dataset.width + "×" + el.dataset.height;
         const matchesDimension =
             state.dimensionFilter === "all" || dimKey === state.dimensionFilter;
-        el.style.display = matchesSelection && matchesDimension ? "" : "none";
+        el.style.display = matchesDimension ? "" : "none";
     });
 }
 
@@ -259,7 +259,6 @@ function saveControlsState() {
                 sortKey: state.sort.key,
                 labelsVisible: state.labelsVisible,
                 scrubberVisible: state.scrubberVisible,
-                filterSelected: state.filterSelected,
                 sizeScale: state.sizeScale,
             }),
         );
@@ -297,12 +296,6 @@ function applyControlsState(saved) {
         scrubberBtn.classList.toggle("active", state.scrubberVisible);
     }
 
-    if (typeof saved.filterSelected === "boolean") {
-        state.filterSelected = saved.filterSelected;
-        compareBtn.classList.toggle("active", state.filterSelected);
-        updateCompareButtonLabel();
-    }
-
     if (saved.speed === 1 || saved.speed === 0.5 || saved.speed === 0.25) {
         state.speed = saved.speed;
         document.querySelectorAll(".speed-button").forEach((btn) => {
@@ -326,17 +319,6 @@ function buildItem(item) {
     wrapper.dataset.width = "0";
     wrapper.dataset.height = "0";
 
-    const selectCheckbox = document.createElement("input");
-    selectCheckbox.type = "checkbox";
-    selectCheckbox.className = "select-checkbox";
-    selectCheckbox.title = "Select for comparison";
-
-    selectCheckbox.addEventListener("change", () => {
-        wrapper.classList.toggle("selected", selectCheckbox.checked);
-        updateCompareButtonLabel();
-        applyFilters();
-    });
-
     const focusBtn = document.createElement("button");
     focusBtn.type = "button";
     focusBtn.className = "focus-button";
@@ -356,6 +338,30 @@ function buildItem(item) {
     video.muted = true;
     video.playsInline = true;
     video.playbackRate = state.speed;
+
+    const muteBtn = document.createElement("button");
+    muteBtn.type = "button";
+    muteBtn.className = "mute-button";
+    muteBtn.innerHTML = icon("speakerOff");
+
+    function syncMuteButton() {
+        muteBtn.innerHTML = icon(video.muted ? "speakerOff" : "speakerOn");
+        muteBtn.title = video.muted ? "Unmute" : "Mute";
+        muteBtn.setAttribute("aria-label", muteBtn.title);
+        muteBtn.classList.toggle("is-unmuted", !video.muted);
+    }
+
+    video.addEventListener("volumechange", syncMuteButton);
+    syncMuteButton();
+
+    muteBtn.addEventListener("click", () => {
+        video.muted = !video.muted;
+    });
+
+    const videoToolbar = document.createElement("div");
+    videoToolbar.className = "video-toolbar";
+    videoToolbar.appendChild(muteBtn);
+    videoToolbar.appendChild(focusBtn);
 
     const scrubber = document.createElement("input");
     scrubber.type = "range";
@@ -408,9 +414,8 @@ function buildItem(item) {
         video.currentTime = Number(scrubber.value);
     });
 
-    wrapper.appendChild(selectCheckbox);
     wrapper.appendChild(video);
-    wrapper.appendChild(focusBtn);
+    wrapper.appendChild(videoToolbar);
     wrapper.appendChild(scrubber);
     wrapper.appendChild(timeLabel);
     wrapper.appendChild(nameEl);
@@ -442,13 +447,10 @@ function clearAll() {
     videoGrid.innerHTML = "";
     videoGrid.classList.remove("focus-mode");
     state.sort = { key: "name" };
-    state.filterSelected = false;
     state.dimensionFilter = "all";
     sortField.value = "name";
     refreshDimensionOptions();
 
-    compareBtn.classList.remove("active");
-    updateCompareButtonLabel();
     updateToolbarVisibility();
     saveControlsState();
 }
@@ -531,6 +533,18 @@ refreshBtn.addEventListener("click", () => {
     });
 });
 
+muteAllBtn.addEventListener("click", () => {
+    document.querySelectorAll("#videoGrid video").forEach((video) => {
+        video.muted = true;
+    });
+});
+
+unmuteAllBtn.addEventListener("click", () => {
+    document.querySelectorAll("#videoGrid video").forEach((video) => {
+        video.muted = false;
+    });
+});
+
 labelsBtn.addEventListener("click", () => {
     state.labelsVisible = !state.labelsVisible;
     videoGrid.classList.toggle("hide-labels", !state.labelsVisible);
@@ -542,14 +556,6 @@ scrubberBtn.addEventListener("click", () => {
     state.scrubberVisible = !state.scrubberVisible;
     videoGrid.classList.toggle("hide-scrubber", !state.scrubberVisible);
     scrubberBtn.classList.toggle("active", state.scrubberVisible);
-    saveControlsState();
-});
-
-compareBtn.addEventListener("click", () => {
-    state.filterSelected = !state.filterSelected;
-    compareBtn.classList.toggle("active", state.filterSelected);
-    updateCompareButtonLabel();
-    applyFilters();
     saveControlsState();
 });
 

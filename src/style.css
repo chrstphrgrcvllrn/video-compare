@@ -433,45 +433,22 @@ body {
     align-items: center;
 }
 
-.select-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    position: absolute;
-    top: 18px;
-    left: 18px;
+.video-toolbar {
+    position: relative;
     z-index: 2;
-    width: 20px;
-    height: 20px;
-    border: 1.5px solid var(--border-default);
-    border-radius: 6px;
-    background: var(--bg-surface);
-    cursor: pointer;
-    box-shadow: var(--shadow-xs);
-    opacity: 0;
-    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 6px;
 }
 
-.video-item:hover .select-checkbox,
-.select-checkbox:focus-visible {
-    opacity: 1;
-}
-
-.select-checkbox:checked {
-    background-color: var(--brand-600);
-    border-color: var(--brand-600);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M13 4L6 11L3 8' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 12px 12px;
-}
-
+.mute-button,
 .focus-button {
     display: flex;
     align-items: center;
     justify-content: center;
     appearance: none;
-    align-self: flex-end;
-    margin-top: 6px;
     width: 24px;
     height: 24px;
     border: none;
@@ -479,16 +456,30 @@ body {
     background: transparent;
     color: var(--text-tertiary);
     cursor: pointer;
-    opacity: 0;
     transition:
         opacity 0.15s,
         color 0.15s,
         background 0.15s;
 }
 
+.mute-button .icon,
 .focus-button .icon {
     width: 15px;
     height: 15px;
+}
+
+.mute-button:hover,
+.focus-button:hover {
+    background: var(--gray-50);
+    color: var(--text-secondary);
+}
+
+.mute-button.is-unmuted {
+    color: var(--brand-600);
+}
+
+.focus-button {
+    opacity: 0;
 }
 
 .video-item:hover .focus-button,
@@ -496,28 +487,27 @@ body {
     opacity: 1;
 }
 
-.focus-button:hover {
-    background: var(--gray-50);
-    color: var(--text-secondary);
-}
-
 .video-item.focused .focus-button {
-    opacity: 1;
     color: var(--brand-600);
 }
 
-#videoGrid.focus-mode .video-item {
-    opacity: 0.18;
-    filter: brightness(0.35);
-    transition:
-        opacity 0.2s ease,
-        filter 0.2s ease;
+#videoGrid.focus-mode .focus-button {
+    opacity: 1;
 }
 
-#videoGrid.focus-mode .video-item.focused {
-    opacity: 1;
-    filter: none;
+#videoGrid.focus-mode .video-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     z-index: 1;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+#videoGrid.focus-mode .video-item.focused::after {
+    opacity: 0;
 }
 
 .video-item video {
