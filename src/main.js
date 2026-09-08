@@ -95,6 +95,7 @@ app.innerHTML = `
             <div id="dropzone">
                 <input id="fileInput" type="file" accept="video/*" multiple hidden />
                 <button id="selectBtn" class="btn btn-primary" type="button">${icon("upload")}<span class="btn-label">Select Videos</span></button>
+                <button id="clearBtn" class="btn btn-secondary" type="button" hidden>${icon("trash")}<span class="btn-label">Clear Selected</span></button>
                 <span id="dropHint">or drag &amp; drop video files here</span>
             </div>
 
@@ -132,7 +133,6 @@ app.innerHTML = `
                     <button class="speed-button" data-speed="0.5" type="button">0.5x</button>
                     <button class="speed-button" data-speed="0.25" type="button">0.25x</button>
                 </div>
-                <button id="clearBtn" class="btn btn-secondary" type="button">${icon("trash")}<span class="btn-label">Clear</span></button>
             </div>
 
             <div id="videoGrid"></div>
@@ -185,6 +185,7 @@ function formatTime(seconds) {
 
 function updateToolbarVisibility() {
     controls.hidden = state.items.length === 0;
+    clearBtn.hidden = state.items.length === 0;
 }
 
 function refreshDimensionOptions() {

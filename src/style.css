@@ -343,10 +343,6 @@ body {
     display: none;
 }
 
-#clearBtn {
-    margin-left: auto;
-}
-
 .sort-group {
     display: flex;
     align-items: center;
