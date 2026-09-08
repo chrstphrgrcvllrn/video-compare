@@ -32,6 +32,8 @@ const ICON = {
     chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
     chevronDown: '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />',
+    arrowsExpand:
+        '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />',
     play: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />',
     pause: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />',
     note: '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />',
@@ -160,27 +162,66 @@ app.innerHTML = `
                         </div>
                     </div>
                 </div>
-                <div class="sort-group">
-                    <label for="sizeSelect">Size</label>
-                    <select id="sizeSelect">
-                        <option value="1">100%</option>
-                        <option value="0.75">75%</option>
-                        <option value="0.5">50%</option>
-                        <option value="0.25" selected>25%</option>
-                        <option value="0.15">15%</option>
-                    </select>
-                </div>
-                <div class="sort-group">
-                    <label for="perRowSelect">Per row</label>
-                    <select id="perRowSelect">
-                        <option value="default" selected>Default</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                    </select>
+                <div class="sort-filter-wrap">
+                    <button id="layoutToggle" class="chip-button" type="button">
+                        ${icon("arrowsExpand")}<span class="btn-label">Size &amp; Layout</span>
+                    </button>
+                    <div id="layoutPanel" class="sort-filter-panel" hidden>
+                        <div class="sort-filter-section">
+                            <div class="sort-filter-section-title">Size</div>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sizeRadio" value="1" />
+                                <span>100%</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sizeRadio" value="0.75" />
+                                <span>75%</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sizeRadio" value="0.5" />
+                                <span>50%</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sizeRadio" value="0.25" checked />
+                                <span>25%</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sizeRadio" value="0.15" />
+                                <span>15%</span>
+                            </label>
+                        </div>
+                        <div class="sort-filter-section">
+                            <div class="sort-filter-section-title">Per row</div>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="default" checked />
+                                <span>Default</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="1" />
+                                <span>1</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="2" />
+                                <span>2</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="3" />
+                                <span>3</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="4" />
+                                <span>4</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="5" />
+                                <span>5</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="perRowRadio" value="6" />
+                                <span>6</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
                 <button id="muteToggleBtn" class="chip-button chip-button-icon" type="button" title="Mute All" aria-label="Mute All">${icon("speakerOff")}</button>
@@ -236,8 +277,8 @@ const controls = document.getElementById("controls");
 const sortFilterToggle = document.getElementById("sortFilterToggle");
 const sortFilterPanel = document.getElementById("sortFilterPanel");
 const dimensionCheckboxList = document.getElementById("dimensionCheckboxList");
-const sizeSelect = document.getElementById("sizeSelect");
-const perRowSelect = document.getElementById("perRowSelect");
+const layoutToggle = document.getElementById("layoutToggle");
+const layoutPanel = document.getElementById("layoutPanel");
 const refreshBtn = document.getElementById("refreshBtn");
 const muteToggleBtn = document.getElementById("muteToggleBtn");
 const unfocusAllBtn = document.getElementById("unfocusAllBtn");
@@ -569,14 +610,14 @@ function applyControlsState(saved) {
     const validSizes = [1, 0.75, 0.5, 0.25, 0.15];
     if (validSizes.includes(saved.sizeScale)) {
         state.sizeScale = saved.sizeScale;
-        sizeSelect.value = String(saved.sizeScale);
+        setRadioValue(layoutPanel, "sizeRadio", String(saved.sizeScale));
         applySizeToAll();
     }
 
     const validPerRow = ["default", "1", "2", "3", "4", "5", "6"];
     if (validPerRow.includes(saved.perRow)) {
         state.perRow = saved.perRow;
-        perRowSelect.value = saved.perRow;
+        setRadioValue(layoutPanel, "perRowRadio", saved.perRow);
         applyPerRow();
     }
 
@@ -758,9 +799,13 @@ function addFiles(fileList) {
     }
 }
 
-function setSortRadio(key) {
-    const radio = sortFilterPanel.querySelector('input[name="sortRadio"][value="' + key + '"]');
+function setRadioValue(panel, name, value) {
+    const radio = panel.querySelector('input[name="' + name + '"][value="' + value + '"]');
     if (radio) radio.checked = true;
+}
+
+function setSortRadio(key) {
+    setRadioValue(sortFilterPanel, "sortRadio", key);
 }
 
 function clearAll() {
@@ -868,16 +913,39 @@ dimensionCheckboxList.addEventListener("change", (e) => {
     applyFilters();
 });
 
-sizeSelect.addEventListener("change", () => {
-    state.sizeScale = Number(sizeSelect.value);
-    applySizeToAll();
-    saveControlsState();
+layoutToggle.addEventListener("click", () => {
+    layoutPanel.hidden = !layoutPanel.hidden;
 });
 
-perRowSelect.addEventListener("change", () => {
-    state.perRow = perRowSelect.value;
-    applyPerRow();
-    saveControlsState();
+document.addEventListener("click", (e) => {
+    if (layoutPanel.hidden) return;
+    if (e.target === layoutToggle || layoutToggle.contains(e.target)) return;
+    if (layoutPanel.contains(e.target)) return;
+    layoutPanel.hidden = true;
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !layoutPanel.hidden) {
+        layoutPanel.hidden = true;
+    }
+});
+
+layoutPanel.querySelectorAll('input[name="sizeRadio"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+        if (!radio.checked) return;
+        state.sizeScale = Number(radio.value);
+        applySizeToAll();
+        saveControlsState();
+    });
+});
+
+layoutPanel.querySelectorAll('input[name="perRowRadio"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+        if (!radio.checked) return;
+        state.perRow = radio.value;
+        applyPerRow();
+        saveControlsState();
+    });
 });
 
 refreshBtn.addEventListener("click", () => {
