@@ -589,6 +589,7 @@ body {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 1;
     background: rgba(0, 0, 0, 0.75);
     pointer-events: none;
     transition: opacity 0.2s ease;
@@ -600,6 +601,44 @@ body {
 
 .video-item video {
     display: block;
+    cursor: pointer;
+}
+
+.video-click-indicator {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.video-click-indicator[hidden] {
+    display: none;
+}
+
+.video-click-indicator.visible {
+    opacity: 1;
+}
+
+.video-click-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+}
+
+.video-click-badge .icon {
+    width: 24px;
+    height: 24px;
+    stroke: #fff;
 }
 
 .scrubber {
@@ -670,7 +709,7 @@ body {
     gap: 8px;
     position: fixed;
     left: 50%;
-    bottom: 32px;
+    top: 20px;
     z-index: 100;
     padding: 10px 18px;
     border-radius: 999px;
@@ -681,7 +720,7 @@ body {
     box-shadow: var(--shadow-lg);
     pointer-events: none;
     opacity: 0;
-    transform: translate(-50%, 8px);
+    transform: translate(-50%, -8px);
     transition:
         opacity 0.2s ease,
         transform 0.2s ease;

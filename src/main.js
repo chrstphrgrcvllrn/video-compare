@@ -46,6 +46,7 @@ const RELEASE_NOTES = [
             "Removed the select/compare checkbox in favor of focus mode",
             "Added a slider view to step through videos one at a time",
             "Added a Playing/Paused toast when using the spacebar shortcut",
+            "Click any video to play/pause just that one, with an icon that fades after a second",
         ],
     },
 ];
@@ -515,9 +516,45 @@ function buildItem(item) {
         video.currentTime = Number(scrubber.value);
     });
 
+    const clickIndicator = document.createElement("div");
+    clickIndicator.className = "video-click-indicator";
+    clickIndicator.hidden = true;
+
+    const clickIndicatorBadge = document.createElement("span");
+    clickIndicatorBadge.className = "video-click-badge";
+    clickIndicator.appendChild(clickIndicatorBadge);
+
+    let clickIndicatorTimer = null;
+
+    function showClickIndicator(isPlaying) {
+        clickIndicatorBadge.innerHTML = icon(isPlaying ? "play" : "pause");
+        clickIndicator.hidden = false;
+        void clickIndicator.offsetWidth;
+        clickIndicator.classList.add("visible");
+
+        clearTimeout(clickIndicatorTimer);
+        clickIndicatorTimer = setTimeout(() => {
+            clickIndicator.classList.remove("visible");
+            clickIndicatorTimer = setTimeout(() => {
+                clickIndicator.hidden = true;
+            }, 200);
+        }, 1000);
+    }
+
+    video.addEventListener("click", () => {
+        if (video.paused) {
+            video.play().catch(() => {});
+            showClickIndicator(true);
+        } else {
+            video.pause();
+            showClickIndicator(false);
+        }
+    });
+
     const videoFrame = document.createElement("div");
     videoFrame.className = "video-frame";
     videoFrame.appendChild(video);
+    videoFrame.appendChild(clickIndicator);
 
     wrapper.appendChild(videoFrame);
     wrapper.appendChild(videoToolbar);
