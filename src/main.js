@@ -57,6 +57,7 @@ const RELEASE_NOTES = [
             "Added a Notepad panel with rich-text formatting to paste copy and compare it against the video preview",
             "Combined Sort by and Dimension into one Sort & Filter dropdown, with multi-select dimension checkboxes",
             "Added a red dot on the bell icon when there's a release you haven't seen yet",
+            "Added a Per Row control to cap how many videos show per row",
         ],
     },
 ];
@@ -69,6 +70,7 @@ const state = {
     scrubberVisible: true,
     dimensionFilters: new Set(),
     sizeScale: 0.25,
+    perRow: "default",
     theme: "light",
     viewMode: "grid",
     sliderIndex: 0,
@@ -159,6 +161,17 @@ app.innerHTML = `
                         <option value="0.15">15%</option>
                     </select>
                 </div>
+                <div class="sort-group">
+                    <label for="perRowSelect">Per row</label>
+                    <select id="perRowSelect">
+                        <option value="default" selected>Default</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
                 <button id="muteToggleBtn" class="chip-button chip-button-icon" type="button" title="Mute All" aria-label="Mute All">${icon("speakerOff")}</button>
                 <button id="unfocusAllBtn" class="chip-button chip-button-icon" type="button" title="Unfocus All" aria-label="Unfocus All">${icon("focus")}</button>
@@ -214,6 +227,7 @@ const sortFilterToggle = document.getElementById("sortFilterToggle");
 const sortFilterPanel = document.getElementById("sortFilterPanel");
 const dimensionCheckboxList = document.getElementById("dimensionCheckboxList");
 const sizeSelect = document.getElementById("sizeSelect");
+const perRowSelect = document.getElementById("perRowSelect");
 const refreshBtn = document.getElementById("refreshBtn");
 const muteToggleBtn = document.getElementById("muteToggleBtn");
 const unfocusAllBtn = document.getElementById("unfocusAllBtn");
@@ -318,6 +332,10 @@ function refreshDimensionOptions() {
     updateSortFilterToggleLabel();
 }
 
+function isPerRowGridActive() {
+    return state.perRow !== "default" && state.viewMode !== "slider";
+}
+
 function applySizeToItem(wrapper, video) {
     const nativeW = Number(wrapper.dataset.width);
     const nativeH = Number(wrapper.dataset.height);
@@ -335,6 +353,30 @@ function applySizeToAll() {
     videoGrid.querySelectorAll(".video-item").forEach((wrapper) => {
         applySizeToItem(wrapper, wrapper.querySelector("video"));
     });
+    applyPerRow();
+}
+
+const GRID_GAP_PX = 20;
+
+function applyPerRow() {
+    const active = isPerRowGridActive();
+    videoGrid.classList.toggle("per-row-active", active);
+
+    if (!active) {
+        videoGrid.style.gridTemplateColumns = "";
+        return;
+    }
+
+    const n = Number(state.perRow);
+    let maxItemWidth = 0;
+    videoGrid.querySelectorAll(".video-item").forEach((wrapper) => {
+        maxItemWidth = Math.max(maxItemWidth, parseFloat(wrapper.style.width) || 0);
+    });
+    const minTrack = (maxItemWidth || 1) + "px";
+    const fairShare = "calc((100% - " + (n - 1) * GRID_GAP_PX + "px) / " + n + ")";
+
+    videoGrid.style.gridTemplateColumns =
+        "repeat(auto-fill, minmax(max(" + minTrack + ", " + fairShare + "), 1fr))";
 }
 
 function matchesDimensionFilter(el) {
@@ -358,18 +400,6 @@ function getSliderItems() {
     return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesDimensionFilter);
 }
 
-function positionSliderArrows(currentItem) {
-    const frame = currentItem && currentItem.querySelector(".video-frame");
-    if (!frame) return;
-
-    const stageRect = videoStage.getBoundingClientRect();
-    const frameRect = frame.getBoundingClientRect();
-    const centerY = frameRect.top - stageRect.top + frameRect.height / 2;
-
-    sliderPrevBtn.style.top = centerY + "px";
-    sliderNextBtn.style.top = centerY + "px";
-}
-
 function renderSlider() {
     const allItems = Array.from(videoGrid.querySelectorAll(".video-item"));
     allItems.forEach((el) => {
@@ -384,16 +414,27 @@ function renderSlider() {
 
     const currentItem = items[state.sliderIndex];
     currentItem.style.display = "";
-    positionSliderArrows(currentItem);
+}
+
+function updateSliderStageHeight() {
+    if (state.viewMode !== "slider") {
+        videoStage.style.height = "";
+        return;
+    }
+    const topOffset = videoStage.getBoundingClientRect().top + window.scrollY;
+    videoStage.style.height = Math.max(window.innerHeight - topOffset, 200) + "px";
 }
 
 function applyViewMode() {
     const isSlider = state.viewMode === "slider";
     videoGrid.classList.toggle("slider-view", isSlider);
+    videoStage.classList.toggle("slider-mode", isSlider);
     sliderModeBtn.classList.toggle("active", isSlider);
     gridModeBtn.classList.toggle("active", !isSlider);
     updateToolbarVisibility();
+    applyPerRow();
     applyFilters();
+    updateSliderStageHeight();
 }
 
 function syncMuteToggleBtn() {
@@ -431,6 +472,7 @@ function saveControlsState() {
                 scrubberVisible: state.scrubberVisible,
                 sizeScale: state.sizeScale,
                 viewMode: state.viewMode,
+                perRow: state.perRow,
             }),
         );
     } catch {
@@ -479,6 +521,13 @@ function applyControlsState(saved) {
         state.sizeScale = saved.sizeScale;
         sizeSelect.value = String(saved.sizeScale);
         applySizeToAll();
+    }
+
+    const validPerRow = ["default", "1", "2", "3", "4", "5"];
+    if (validPerRow.includes(saved.perRow)) {
+        state.perRow = saved.perRow;
+        perRowSelect.value = saved.perRow;
+        applyPerRow();
     }
 
     if (saved.viewMode === "grid" || saved.viewMode === "slider") {
@@ -561,6 +610,7 @@ function buildItem(item) {
         wrapper.dataset.width = String(video.videoWidth || 320);
         wrapper.dataset.height = String(video.videoHeight || 180);
         applySizeToItem(wrapper, video);
+        applyPerRow();
 
         scrubber.max = String(video.duration || 0);
         timeLabel.textContent = formatTime(video.currentTime) + " / " + formatTime(video.duration);
@@ -771,9 +821,12 @@ dimensionCheckboxList.addEventListener("change", (e) => {
 sizeSelect.addEventListener("change", () => {
     state.sizeScale = Number(sizeSelect.value);
     applySizeToAll();
-    if (state.viewMode === "slider") {
-        positionSliderArrows(getSliderItems()[state.sliderIndex]);
-    }
+    saveControlsState();
+});
+
+perRowSelect.addEventListener("change", () => {
+    state.perRow = perRowSelect.value;
+    applyPerRow();
     saveControlsState();
 });
 
@@ -1041,9 +1094,8 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("resize", () => {
-    if (state.viewMode === "slider") {
-        positionSliderArrows(getSliderItems()[state.sliderIndex]);
-    }
+    updateSliderStageHeight();
+    applyPerRow();
 });
 
 initTheme();
