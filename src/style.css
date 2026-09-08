@@ -195,13 +195,8 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: var(--border-default);
-    border: 1.5px solid var(--bg-surface);
-    transition: background 0.15s;
-}
-
-.notification-dot.unread {
     background: #ef4444;
+    border: 1.5px solid var(--bg-surface);
 }
 
 .icon-button:hover {
@@ -1009,6 +1004,10 @@ body {
     opacity: 1;
 }
 
+#sortFilterPanel.open {
+    width: 280px;
+}
+
 .side-panel-header {
     display: flex;
     align-items: center;
@@ -1017,6 +1016,10 @@ body {
     flex-shrink: 0;
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-subtle);
+}
+
+#sortFilterPanel .side-panel-header {
+    width: 280px;
 }
 
 .side-panel-title {
@@ -1067,6 +1070,10 @@ body {
     flex-shrink: 0;
     min-height: 0;
     overflow-y: auto;
+}
+
+#sortFilterPanel .side-panel-body {
+    width: 280px;
 }
 
 .notepad-panel .ql-toolbar.ql-snow {

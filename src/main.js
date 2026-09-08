@@ -8,7 +8,6 @@ const CONTROLS_KEY = "video-preview-controls";
 const NOTEPAD_CONTENT_KEY = "video-preview-notepad-content";
 const NOTEPAD_OPEN_KEY = "video-preview-notepad-open";
 const SORT_FILTER_OPEN_KEY = "video-preview-sort-filter-open";
-const RELEASE_NOTES_SEEN_KEY = "video-preview-release-notes-seen";
 
 const ICON = {
     upload: '<path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />',
@@ -80,6 +79,7 @@ const RELEASE_NOTES = [
             "Added a Videos section to Sort & Filter for filtering by specific video name",
             "Added a per-video play/pause toggle button next to mute/unmute",
             "Turned Sort & Filter into an expandable side panel (like Notepad, but from the left), with All / None quick-select for Videos and Dimension",
+            "Narrowed the Sort & Filter panel, and made the bell's notification dot always red",
         ],
     },
 ];
@@ -163,7 +163,7 @@ app.innerHTML = `
                     <div class="release-notes-wrap">
                         <button id="releaseNotesToggle" class="icon-button" type="button" title="Release notes" aria-label="Release notes">
                             ${icon("bell")}
-                            <span id="releaseNotesDot" class="notification-dot"></span>
+                            <span class="notification-dot"></span>
                         </button>
                         <div id="releaseNotesPanel" class="release-notes-panel" hidden>
                             <div class="release-notes-header">
@@ -266,7 +266,6 @@ const clearBtn = document.getElementById("clearBtn");
 const themeToggle = document.getElementById("themeToggle");
 const releaseNotesToggle = document.getElementById("releaseNotesToggle");
 const releaseNotesPanel = document.getElementById("releaseNotesPanel");
-const releaseNotesDot = document.getElementById("releaseNotesDot");
 const releaseNotesClose = document.getElementById("releaseNotesClose");
 const controls = document.getElementById("controls");
 const sortFilterToggle = document.getElementById("sortFilterToggle");
@@ -1122,28 +1121,6 @@ themeToggle.addEventListener("click", () => {
     applyTheme(state.theme === "dark" ? "light" : "dark");
 });
 
-function updateReleaseNotesDot() {
-    const latest = RELEASE_NOTES[0] && RELEASE_NOTES[0].date;
-    let seen = null;
-    try {
-        seen = localStorage.getItem(RELEASE_NOTES_SEEN_KEY);
-    } catch {
-        /* localStorage unavailable */
-    }
-    releaseNotesDot.classList.toggle("unread", !!latest && seen !== latest);
-}
-
-function markReleaseNotesSeen() {
-    const latest = RELEASE_NOTES[0] && RELEASE_NOTES[0].date;
-    if (!latest) return;
-    try {
-        localStorage.setItem(RELEASE_NOTES_SEEN_KEY, latest);
-    } catch {
-        /* localStorage unavailable */
-    }
-    releaseNotesDot.classList.remove("unread");
-}
-
 infoToastToggle.addEventListener("click", () => {
     infoToastPanel.hidden = !infoToastPanel.hidden;
 });
@@ -1163,9 +1140,6 @@ document.addEventListener("keydown", (e) => {
 
 releaseNotesToggle.addEventListener("click", () => {
     releaseNotesPanel.hidden = !releaseNotesPanel.hidden;
-    if (!releaseNotesPanel.hidden) {
-        markReleaseNotesSeen();
-    }
 });
 
 releaseNotesClose.addEventListener("click", () => {
@@ -1351,4 +1325,3 @@ applyControlsState(loadControlsState());
 syncMuteToggleBtn();
 initNotepad();
 initSortFilter();
-updateReleaseNotesDot();
