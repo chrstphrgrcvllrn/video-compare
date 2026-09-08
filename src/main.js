@@ -34,9 +34,9 @@ const RELEASE_NOTES = [
     {
         date: "September 8, 2026",
         items: [
-            "Added focus mode to spotlight one or more videos for comparison",
+            "Added focus mode to spotlight one or more videos for comparison, plus Unfocus All",
             "Added spacebar shortcut to play/pause all videos",
-            "Added mute/unmute per video, plus Mute All and Unmute All",
+            "Added mute/unmute per video, plus a Mute All / Unmute All toggle",
             "Removed the select/compare checkbox in favor of focus mode",
         ],
     },
@@ -123,8 +123,8 @@ app.innerHTML = `
                     </select>
                 </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
-                <button id="muteAllBtn" class="chip-button" type="button">${icon("speakerOff")}<span class="btn-label">Mute All</span></button>
-                <button id="unmuteAllBtn" class="chip-button" type="button">${icon("speakerOn")}<span class="btn-label">Unmute All</span></button>
+                <button id="muteToggleBtn" class="chip-button" type="button">${icon("speakerOff")}<span class="btn-label">Mute All</span></button>
+                <button id="unfocusAllBtn" class="chip-button" type="button">${icon("focus")}<span class="btn-label">Unfocus All</span></button>
                 <button id="labelsBtn" class="chip-button active" type="button">${icon("tag")}<span class="btn-label">Labels</span></button>
                 <button id="scrubberBtn" class="chip-button active" type="button">${icon("sliders")}<span class="btn-label">Scrubber</span></button>
                 <div id="speedToggle">
@@ -153,8 +153,8 @@ const sortField = document.getElementById("sortField");
 const dimensionFilter = document.getElementById("dimensionFilter");
 const sizeSelect = document.getElementById("sizeSelect");
 const refreshBtn = document.getElementById("refreshBtn");
-const muteAllBtn = document.getElementById("muteAllBtn");
-const unmuteAllBtn = document.getElementById("unmuteAllBtn");
+const muteToggleBtn = document.getElementById("muteToggleBtn");
+const unfocusAllBtn = document.getElementById("unfocusAllBtn");
 const labelsBtn = document.getElementById("labelsBtn");
 const scrubberBtn = document.getElementById("scrubberBtn");
 const videoGrid = document.getElementById("videoGrid");
@@ -233,6 +233,17 @@ function applyFilters() {
             state.dimensionFilter === "all" || dimKey === state.dimensionFilter;
         el.style.display = matchesDimension ? "" : "none";
     });
+}
+
+function syncMuteToggleBtn() {
+    const videos = Array.from(videoGrid.querySelectorAll("video"));
+    const allMuted = videos.length === 0 || videos.every((video) => video.muted);
+    muteToggleBtn.classList.toggle("active", allMuted);
+    muteToggleBtn.innerHTML =
+        icon(allMuted ? "speakerOn" : "speakerOff") +
+        '<span class="btn-label">' +
+        (allMuted ? "Unmute All" : "Mute All") +
+        "</span>";
 }
 
 function applyTheme(theme) {
@@ -349,6 +360,7 @@ function buildItem(item) {
         muteBtn.title = video.muted ? "Unmute" : "Mute";
         muteBtn.setAttribute("aria-label", muteBtn.title);
         muteBtn.classList.toggle("is-unmuted", !video.muted);
+        syncMuteToggleBtn();
     }
 
     video.addEventListener("volumechange", syncMuteButton);
@@ -456,6 +468,7 @@ function clearAll() {
     refreshDimensionOptions();
 
     updateToolbarVisibility();
+    syncMuteToggleBtn();
     saveControlsState();
 }
 
@@ -537,16 +550,17 @@ refreshBtn.addEventListener("click", () => {
     });
 });
 
-muteAllBtn.addEventListener("click", () => {
-    document.querySelectorAll("#videoGrid video").forEach((video) => {
-        video.muted = true;
+muteToggleBtn.addEventListener("click", () => {
+    const videos = Array.from(videoGrid.querySelectorAll("video"));
+    const allMuted = videos.length > 0 && videos.every((video) => video.muted);
+    videos.forEach((video) => {
+        video.muted = !allMuted;
     });
 });
 
-unmuteAllBtn.addEventListener("click", () => {
-    document.querySelectorAll("#videoGrid video").forEach((video) => {
-        video.muted = false;
-    });
+unfocusAllBtn.addEventListener("click", () => {
+    videoGrid.querySelectorAll(".video-item.focused").forEach((el) => el.classList.remove("focused"));
+    videoGrid.classList.remove("focus-mode");
 });
 
 labelsBtn.addEventListener("click", () => {
@@ -636,3 +650,4 @@ document.addEventListener("keydown", (e) => {
 
 initTheme();
 applyControlsState(loadControlsState());
+syncMuteToggleBtn();
