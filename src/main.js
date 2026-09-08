@@ -45,6 +45,15 @@ function icon(name) {
     );
 }
 
+function escapeHtml(value) {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 const RELEASE_NOTES = [
     {
         date: "September 8, 2026",
@@ -66,6 +75,9 @@ const RELEASE_NOTES = [
             "Replaced the Size & Layout dropdown with separate number-spinner controls for Size and Per row",
             "Renamed Refresh to Replay, and added a per-video Replay button next to mute/unmute",
             "Made Labels and Scrubber icon-only, and the release notes dot always visible (red when unread, gray when read)",
+            "Made per-video Replay and Focus buttons always visible instead of hover-only",
+            "Added a Videos section to Sort & Filter for filtering by specific video name",
+            "Added a per-video play/pause toggle button next to mute/unmute",
         ],
     },
 ];
@@ -77,6 +89,7 @@ const state = {
     labelsVisible: true,
     scrubberVisible: true,
     dimensionFilters: new Set(),
+    nameFilters: new Set(),
     sizeScale: 0.25,
     perRow: 0,
     theme: "light",
@@ -156,6 +169,12 @@ app.innerHTML = `
                             </label>
                         </div>
                         <div class="sort-filter-section">
+                            <div class="sort-filter-section-title">Videos</div>
+                            <div id="nameCheckboxList" class="sort-filter-checklist">
+                                <p class="sort-filter-empty">No videos yet</p>
+                            </div>
+                        </div>
+                        <div class="sort-filter-section">
                             <div class="sort-filter-section-title">Dimension</div>
                             <div id="dimensionCheckboxList" class="sort-filter-checklist">
                                 <p class="sort-filter-empty">No videos yet</p>
@@ -233,6 +252,7 @@ const controls = document.getElementById("controls");
 const sortFilterToggle = document.getElementById("sortFilterToggle");
 const sortFilterPanel = document.getElementById("sortFilterPanel");
 const dimensionCheckboxList = document.getElementById("dimensionCheckboxList");
+const nameCheckboxList = document.getElementById("nameCheckboxList");
 const sizeInput = document.getElementById("sizeInput");
 const sizeSpinner = document.getElementById("sizeSpinner");
 const perRowInput = document.getElementById("perRowInput");
@@ -305,40 +325,50 @@ function updateToolbarVisibility() {
 
 function updateSortFilterToggleLabel() {
     const label = sortFilterToggle.querySelector(".btn-label");
-    const count = state.dimensionFilters.size;
+    const count = state.dimensionFilters.size + state.nameFilters.size;
     label.textContent = "Sort & Filter" + (count > 0 ? " (" + count + ")" : "");
     sortFilterToggle.classList.toggle("active", count > 0);
 }
 
+function populateChecklist(listEl, values, activeSet) {
+    listEl.innerHTML = values.length
+        ? values
+              .map((v) => {
+                  const safe = escapeHtml(v);
+                  return (
+                      '<label class="sort-filter-option"><input type="checkbox" value="' +
+                      safe +
+                      '"' +
+                      (activeSet.has(v) ? " checked" : "") +
+                      " /><span>" +
+                      safe +
+                      "</span></label>"
+                  );
+              })
+              .join("")
+        : '<p class="sort-filter-empty">No videos yet</p>';
+}
+
 function refreshDimensionOptions() {
     const dims = new Set();
+    const names = new Set();
 
     videoGrid.querySelectorAll(".video-item").forEach((el) => {
         if (el.dataset.width !== "0" && el.dataset.height !== "0") {
             dims.add(el.dataset.width + "×" + el.dataset.height);
         }
+        if (el.dataset.name) names.add(el.dataset.name);
     });
 
     state.dimensionFilters.forEach((d) => {
         if (!dims.has(d)) state.dimensionFilters.delete(d);
     });
+    state.nameFilters.forEach((n) => {
+        if (!names.has(n)) state.nameFilters.delete(n);
+    });
 
-    const sortedDims = Array.from(dims).sort();
-
-    dimensionCheckboxList.innerHTML = sortedDims.length
-        ? sortedDims
-              .map(
-                  (d) =>
-                      '<label class="sort-filter-option"><input type="checkbox" value="' +
-                      d +
-                      '"' +
-                      (state.dimensionFilters.has(d) ? " checked" : "") +
-                      " /><span>" +
-                      d +
-                      "</span></label>",
-              )
-              .join("")
-        : '<p class="sort-filter-empty">No videos yet</p>';
+    populateChecklist(dimensionCheckboxList, Array.from(dims).sort(), state.dimensionFilters);
+    populateChecklist(nameCheckboxList, Array.from(names).sort(), state.nameFilters);
 
     updateSortFilterToggleLabel();
 }
@@ -379,6 +409,15 @@ function matchesDimensionFilter(el) {
     return state.dimensionFilters.has(dimKey);
 }
 
+function matchesNameFilter(el) {
+    if (state.nameFilters.size === 0) return true;
+    return state.nameFilters.has(el.dataset.name);
+}
+
+function matchesActiveFilters(el) {
+    return matchesDimensionFilter(el) && matchesNameFilter(el);
+}
+
 function applyFilters() {
     if (state.viewMode === "slider") {
         renderSlider();
@@ -386,12 +425,12 @@ function applyFilters() {
     }
 
     videoGrid.querySelectorAll(".video-item").forEach((el) => {
-        el.style.display = matchesDimensionFilter(el) ? "" : "none";
+        el.style.display = matchesActiveFilters(el) ? "" : "none";
     });
 }
 
 function getSliderItems() {
-    return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesDimensionFilter);
+    return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesActiveFilters);
 }
 
 const SLIDE_CLASSES = ["slide-anim", "slide-from-right", "slide-from-left", "slide-exit-left", "slide-exit-right"];
@@ -638,6 +677,29 @@ function buildItem(item) {
         video.muted = !video.muted;
     });
 
+    const playPauseBtn = document.createElement("button");
+    playPauseBtn.type = "button";
+    playPauseBtn.className = "play-pause-button";
+    playPauseBtn.innerHTML = icon("pause");
+
+    function syncPlayPauseButton() {
+        playPauseBtn.innerHTML = icon(video.paused ? "play" : "pause");
+        playPauseBtn.title = video.paused ? "Play" : "Pause";
+        playPauseBtn.setAttribute("aria-label", playPauseBtn.title);
+    }
+
+    video.addEventListener("play", syncPlayPauseButton);
+    video.addEventListener("pause", syncPlayPauseButton);
+    syncPlayPauseButton();
+
+    playPauseBtn.addEventListener("click", () => {
+        if (video.paused) {
+            video.play().catch(() => {});
+        } else {
+            video.pause();
+        }
+    });
+
     const replayBtn = document.createElement("button");
     replayBtn.type = "button";
     replayBtn.className = "replay-button";
@@ -655,6 +717,7 @@ function buildItem(item) {
     const videoToolbar = document.createElement("div");
     videoToolbar.className = "video-toolbar";
     videoToolbar.appendChild(muteBtn);
+    videoToolbar.appendChild(playPauseBtn);
     videoToolbar.appendChild(replayBtn);
     videoToolbar.appendChild(focusBtn);
 
@@ -793,6 +856,7 @@ function clearAll() {
     videoGrid.classList.remove("focus-mode");
     state.sort = { key: "name" };
     state.dimensionFilters.clear();
+    state.nameFilters.clear();
     state.sliderIndex = 0;
     setSortRadio("name");
     refreshDimensionOptions();
@@ -886,6 +950,17 @@ dimensionCheckboxList.addEventListener("change", (e) => {
         state.dimensionFilters.add(e.target.value);
     } else {
         state.dimensionFilters.delete(e.target.value);
+    }
+    updateSortFilterToggleLabel();
+    applyFilters();
+});
+
+nameCheckboxList.addEventListener("change", (e) => {
+    if (e.target.type !== "checkbox") return;
+    if (e.target.checked) {
+        state.nameFilters.add(e.target.value);
+    } else {
+        state.nameFilters.delete(e.target.value);
     }
     updateSortFilterToggleLabel();
     applyFilters();

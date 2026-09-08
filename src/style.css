@@ -749,6 +749,7 @@ body {
 }
 
 .mute-button,
+.play-pause-button,
 .replay-button,
 .focus-button {
     display: flex;
@@ -769,6 +770,7 @@ body {
 }
 
 .mute-button .icon,
+.play-pause-button .icon,
 .replay-button .icon,
 .focus-button .icon {
     width: 15px;
@@ -776,6 +778,7 @@ body {
 }
 
 .mute-button:hover,
+.play-pause-button:hover,
 .replay-button:hover,
 .focus-button:hover {
     background: var(--gray-50);
