@@ -26,6 +26,7 @@ const ICON = {
         '<path d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
     singleFrame: '<rect x="5.25" y="5.25" width="13.5" height="13.5" rx="2.25" />',
     grid: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />',
+    funnel: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />',
     chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
     play: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />',
@@ -53,6 +54,7 @@ const RELEASE_NOTES = [
             "Added a Playing/Paused toast when using the spacebar shortcut",
             "Click any video to play/pause just that one, with an icon that fades after a second",
             "Added a Notepad panel with rich-text formatting to paste copy and compare it against the video preview",
+            "Combined Sort by and Dimension into one Sort & Filter dropdown, with multi-select dimension checkboxes",
         ],
     },
 ];
@@ -63,7 +65,7 @@ const state = {
     sort: { key: "name" },
     labelsVisible: true,
     scrubberVisible: true,
-    dimensionFilter: "all",
+    dimensionFilters: new Set(),
     sizeScale: 0.25,
     theme: "light",
     viewMode: "grid",
@@ -120,18 +122,29 @@ app.innerHTML = `
             </div>
 
             <div id="controls" hidden>
-                <div class="sort-group">
-                    <label for="sortField">Sort by</label>
-                    <select id="sortField">
-                        <option value="name">Name</option>
-                        <option value="dimension">Dimension</option>
-                    </select>
-                </div>
-                <div class="sort-group">
-                    <label for="dimensionFilter">Dimension</label>
-                    <select id="dimensionFilter">
-                        <option value="all">All</option>
-                    </select>
+                <div class="sort-filter-wrap">
+                    <button id="sortFilterToggle" class="chip-button" type="button">
+                        ${icon("funnel")}<span class="btn-label">Sort &amp; Filter</span>
+                    </button>
+                    <div id="sortFilterPanel" class="sort-filter-panel" hidden>
+                        <div class="sort-filter-section">
+                            <div class="sort-filter-section-title">Sort by</div>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sortRadio" value="name" checked />
+                                <span>Name</span>
+                            </label>
+                            <label class="sort-filter-option">
+                                <input type="radio" name="sortRadio" value="dimension" />
+                                <span>Dimension</span>
+                            </label>
+                        </div>
+                        <div class="sort-filter-section">
+                            <div class="sort-filter-section-title">Dimension</div>
+                            <div id="dimensionCheckboxList" class="sort-filter-checklist">
+                                <p class="sort-filter-empty">No videos yet</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="sort-group">
                     <label for="sizeSelect">Size</label>
@@ -193,8 +206,9 @@ const releaseNotesToggle = document.getElementById("releaseNotesToggle");
 const releaseNotesPanel = document.getElementById("releaseNotesPanel");
 const releaseNotesClose = document.getElementById("releaseNotesClose");
 const controls = document.getElementById("controls");
-const sortField = document.getElementById("sortField");
-const dimensionFilter = document.getElementById("dimensionFilter");
+const sortFilterToggle = document.getElementById("sortFilterToggle");
+const sortFilterPanel = document.getElementById("sortFilterPanel");
+const dimensionCheckboxList = document.getElementById("dimensionCheckboxList");
 const sizeSelect = document.getElementById("sizeSelect");
 const refreshBtn = document.getElementById("refreshBtn");
 const muteToggleBtn = document.getElementById("muteToggleBtn");
@@ -260,6 +274,13 @@ function updateToolbarVisibility() {
     sliderNextBtn.hidden = !showArrows;
 }
 
+function updateSortFilterToggleLabel() {
+    const label = sortFilterToggle.querySelector(".btn-label");
+    const count = state.dimensionFilters.size;
+    label.textContent = "Sort & Filter" + (count > 0 ? " (" + count + ")" : "");
+    sortFilterToggle.classList.toggle("active", count > 0);
+}
+
 function refreshDimensionOptions() {
     const dims = new Set();
 
@@ -269,15 +290,28 @@ function refreshDimensionOptions() {
         }
     });
 
+    state.dimensionFilters.forEach((d) => {
+        if (!dims.has(d)) state.dimensionFilters.delete(d);
+    });
+
     const sortedDims = Array.from(dims).sort();
-    const previousValue = dimensionFilter.value;
 
-    dimensionFilter.innerHTML =
-        '<option value="all">All</option>' +
-        sortedDims.map((d) => '<option value="' + d + '">' + d + "</option>").join("");
+    dimensionCheckboxList.innerHTML = sortedDims.length
+        ? sortedDims
+              .map(
+                  (d) =>
+                      '<label class="sort-filter-option"><input type="checkbox" value="' +
+                      d +
+                      '"' +
+                      (state.dimensionFilters.has(d) ? " checked" : "") +
+                      " /><span>" +
+                      d +
+                      "</span></label>",
+              )
+              .join("")
+        : '<p class="sort-filter-empty">No videos yet</p>';
 
-    dimensionFilter.value = sortedDims.includes(previousValue) ? previousValue : "all";
-    state.dimensionFilter = dimensionFilter.value;
+    updateSortFilterToggleLabel();
 }
 
 function applySizeToItem(wrapper, video) {
@@ -300,8 +334,9 @@ function applySizeToAll() {
 }
 
 function matchesDimensionFilter(el) {
+    if (state.dimensionFilters.size === 0) return true;
     const dimKey = el.dataset.width + "×" + el.dataset.height;
-    return state.dimensionFilter === "all" || dimKey === state.dimensionFilter;
+    return state.dimensionFilters.has(dimKey);
 }
 
 function applyFilters() {
@@ -413,7 +448,7 @@ function applyControlsState(saved) {
 
     if (saved.sortKey === "name" || saved.sortKey === "dimension") {
         state.sort.key = saved.sortKey;
-        sortField.value = saved.sortKey;
+        setSortRadio(saved.sortKey);
     }
 
     if (typeof saved.labelsVisible === "boolean") {
@@ -619,15 +654,20 @@ function addFiles(fileList) {
     }
 }
 
+function setSortRadio(key) {
+    const radio = sortFilterPanel.querySelector('input[name="sortRadio"][value="' + key + '"]');
+    if (radio) radio.checked = true;
+}
+
 function clearAll() {
     state.items.forEach((item) => URL.revokeObjectURL(item.url));
     state.items = [];
     videoGrid.innerHTML = "";
     videoGrid.classList.remove("focus-mode");
     state.sort = { key: "name" };
-    state.dimensionFilter = "all";
+    state.dimensionFilters.clear();
     state.sliderIndex = 0;
-    sortField.value = "name";
+    setSortRadio("name");
     refreshDimensionOptions();
 
     updateToolbarVisibility();
@@ -688,13 +728,39 @@ dropzone.addEventListener("drop", (e) => {
     }
 });
 
-sortField.addEventListener("change", () => {
-    applySort(sortField.value);
-    saveControlsState();
+sortFilterToggle.addEventListener("click", () => {
+    sortFilterPanel.hidden = !sortFilterPanel.hidden;
 });
 
-dimensionFilter.addEventListener("change", () => {
-    state.dimensionFilter = dimensionFilter.value;
+document.addEventListener("click", (e) => {
+    if (sortFilterPanel.hidden) return;
+    if (e.target === sortFilterToggle || sortFilterToggle.contains(e.target)) return;
+    if (sortFilterPanel.contains(e.target)) return;
+    sortFilterPanel.hidden = true;
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !sortFilterPanel.hidden) {
+        sortFilterPanel.hidden = true;
+    }
+});
+
+sortFilterPanel.querySelectorAll('input[name="sortRadio"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+        if (!radio.checked) return;
+        applySort(radio.value);
+        saveControlsState();
+    });
+});
+
+dimensionCheckboxList.addEventListener("change", (e) => {
+    if (e.target.type !== "checkbox") return;
+    if (e.target.checked) {
+        state.dimensionFilters.add(e.target.value);
+    } else {
+        state.dimensionFilters.delete(e.target.value);
+    }
+    updateSortFilterToggleLabel();
     applyFilters();
 });
 
