@@ -58,6 +58,7 @@ const RELEASE_NOTES = [
             "Combined Sort by and Dimension into one Sort & Filter dropdown, with multi-select dimension checkboxes",
             "Added a red dot on the bell icon when there's a release you haven't seen yet",
             "Added a Per Row control to cap how many videos show per row",
+            "Added a sliding transition when navigating between videos in Slider View",
         ],
     },
 ];
@@ -384,10 +385,17 @@ function getSliderItems() {
     return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesDimensionFilter);
 }
 
+const SLIDE_CLASSES = ["slide-anim", "slide-from-right", "slide-from-left", "slide-exit-left", "slide-exit-right"];
+
+function resetSlideClasses(el) {
+    el.classList.remove(...SLIDE_CLASSES);
+}
+
 function renderSlider() {
     const allItems = Array.from(videoGrid.querySelectorAll(".video-item"));
     allItems.forEach((el) => {
         el.style.display = "none";
+        resetSlideClasses(el);
     });
 
     const items = getSliderItems();
@@ -398,6 +406,54 @@ function renderSlider() {
 
     const currentItem = items[state.sliderIndex];
     currentItem.style.display = "";
+}
+
+let slideCleanup = null;
+
+function slideToIndex(step) {
+    const items = getSliderItems();
+    if (items.length === 0) return;
+
+    const outgoing = items[state.sliderIndex] || null;
+    const newIndex = ((state.sliderIndex + step) % items.length + items.length) % items.length;
+    const incoming = items[newIndex];
+
+    state.sliderIndex = newIndex;
+
+    if (!outgoing || outgoing === incoming || items.length < 2) {
+        renderSlider();
+        return;
+    }
+
+    if (slideCleanup) slideCleanup();
+
+    const direction = step > 0 ? "next" : "prev";
+
+    outgoing.style.display = "";
+    incoming.style.display = "";
+    resetSlideClasses(outgoing);
+    resetSlideClasses(incoming);
+    outgoing.classList.add("slide-anim");
+    incoming.classList.add("slide-anim");
+    incoming.classList.add(direction === "next" ? "slide-from-right" : "slide-from-left");
+
+    void incoming.offsetWidth;
+
+    outgoing.classList.add(direction === "next" ? "slide-exit-left" : "slide-exit-right");
+    incoming.classList.remove("slide-from-right", "slide-from-left");
+
+    const cleanup = () => {
+        Array.from(videoGrid.querySelectorAll(".video-item")).forEach((el) => {
+            if (el !== incoming) el.style.display = "none";
+            resetSlideClasses(el);
+        });
+        incoming.removeEventListener("transitionend", cleanup);
+        clearTimeout(fallbackTimer);
+        slideCleanup = null;
+    };
+    const fallbackTimer = setTimeout(cleanup, 400);
+    incoming.addEventListener("transitionend", cleanup);
+    slideCleanup = cleanup;
 }
 
 function updateSliderStageHeight() {
@@ -868,17 +924,11 @@ gridModeBtn.addEventListener("click", () => {
 });
 
 sliderPrevBtn.addEventListener("click", () => {
-    const items = getSliderItems();
-    if (items.length === 0) return;
-    state.sliderIndex = (state.sliderIndex - 1 + items.length) % items.length;
-    renderSlider();
+    slideToIndex(-1);
 });
 
 sliderNextBtn.addEventListener("click", () => {
-    const items = getSliderItems();
-    if (items.length === 0) return;
-    state.sliderIndex = (state.sliderIndex + 1) % items.length;
-    renderSlider();
+    slideToIndex(1);
 });
 
 themeToggle.addEventListener("click", () => {

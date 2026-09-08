@@ -552,9 +552,41 @@ body {
 }
 
 #videoGrid.slider-view {
+    position: relative;
     height: 100%;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+#videoGrid.slider-view .video-item.slide-anim {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition:
+        transform 0.32s ease,
+        opacity 0.32s ease;
+}
+
+#videoGrid.slider-view .video-item.slide-anim.slide-from-right {
+    transform: translate(calc(-50% + 100%), -50%);
+    opacity: 0;
+}
+
+#videoGrid.slider-view .video-item.slide-anim.slide-from-left {
+    transform: translate(calc(-50% - 100%), -50%);
+    opacity: 0;
+}
+
+#videoGrid.slider-view .video-item.slide-anim.slide-exit-left {
+    transform: translate(calc(-50% - 100%), -50%);
+    opacity: 0;
+}
+
+#videoGrid.slider-view .video-item.slide-anim.slide-exit-right {
+    transform: translate(calc(-50% + 100%), -50%);
+    opacity: 0;
 }
 
 #videoGrid.per-row-active {
