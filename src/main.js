@@ -20,6 +20,10 @@ const ICON = {
         '<path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
     speakerOff:
         '<path d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
+    viewColumns:
+        '<path d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />',
+    chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
+    chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
 };
 
 function icon(name) {
@@ -38,6 +42,7 @@ const RELEASE_NOTES = [
             "Added spacebar shortcut to play/pause all videos",
             "Added mute/unmute per video, plus a Mute All / Unmute All toggle",
             "Removed the select/compare checkbox in favor of focus mode",
+            "Added a slider view to step through videos one at a time",
         ],
     },
 ];
@@ -51,6 +56,8 @@ const state = {
     dimensionFilter: "all",
     sizeScale: 0.25,
     theme: "light",
+    viewMode: "grid",
+    sliderIndex: 0,
 };
 
 const app = document.getElementById("app");
@@ -128,6 +135,7 @@ app.innerHTML = `
                 <button id="unfocusAllBtn" class="chip-button" type="button">${icon("focus")}<span class="btn-label">Unfocus All</span></button>
                 <button id="labelsBtn" class="chip-button active" type="button">${icon("tag")}<span class="btn-label">Labels</span></button>
                 <button id="scrubberBtn" class="chip-button active" type="button">${icon("sliders")}<span class="btn-label">Scrubber</span></button>
+                <button id="sliderViewBtn" class="chip-button" type="button">${icon("viewColumns")}<span class="btn-label">Slider View</span></button>
                 <div id="speedToggle">
                     <button class="speed-button active" data-speed="1" type="button">1x</button>
                     <button class="speed-button" data-speed="0.5" type="button">0.5x</button>
@@ -135,7 +143,11 @@ app.innerHTML = `
                 </div>
             </div>
 
-            <div id="videoGrid"></div>
+            <div id="videoStage">
+                <button id="sliderPrevBtn" class="slider-arrow slider-arrow-prev" type="button" title="Previous video" aria-label="Previous video" hidden>${icon("chevronLeft")}</button>
+                <div id="videoGrid"></div>
+                <button id="sliderNextBtn" class="slider-arrow slider-arrow-next" type="button" title="Next video" aria-label="Next video" hidden>${icon("chevronRight")}</button>
+            </div>
         </div>
     </div>
 `;
@@ -157,6 +169,9 @@ const muteToggleBtn = document.getElementById("muteToggleBtn");
 const unfocusAllBtn = document.getElementById("unfocusAllBtn");
 const labelsBtn = document.getElementById("labelsBtn");
 const scrubberBtn = document.getElementById("scrubberBtn");
+const sliderViewBtn = document.getElementById("sliderViewBtn");
+const sliderPrevBtn = document.getElementById("sliderPrevBtn");
+const sliderNextBtn = document.getElementById("sliderNextBtn");
 const videoGrid = document.getElementById("videoGrid");
 
 function isVideoFile(file) {
@@ -186,6 +201,10 @@ function formatTime(seconds) {
 function updateToolbarVisibility() {
     controls.hidden = state.items.length === 0;
     clearBtn.hidden = state.items.length === 0;
+
+    const showArrows = state.viewMode === "slider" && state.items.length > 0;
+    sliderPrevBtn.hidden = !showArrows;
+    sliderNextBtn.hidden = !showArrows;
 }
 
 function refreshDimensionOptions() {
@@ -227,13 +246,47 @@ function applySizeToAll() {
     });
 }
 
+function matchesDimensionFilter(el) {
+    const dimKey = el.dataset.width + "×" + el.dataset.height;
+    return state.dimensionFilter === "all" || dimKey === state.dimensionFilter;
+}
+
 function applyFilters() {
+    if (state.viewMode === "slider") {
+        renderSlider();
+        return;
+    }
+
     videoGrid.querySelectorAll(".video-item").forEach((el) => {
-        const dimKey = el.dataset.width + "×" + el.dataset.height;
-        const matchesDimension =
-            state.dimensionFilter === "all" || dimKey === state.dimensionFilter;
-        el.style.display = matchesDimension ? "" : "none";
+        el.style.display = matchesDimensionFilter(el) ? "" : "none";
     });
+}
+
+function getSliderItems() {
+    return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesDimensionFilter);
+}
+
+function renderSlider() {
+    const allItems = Array.from(videoGrid.querySelectorAll(".video-item"));
+    allItems.forEach((el) => {
+        el.style.display = "none";
+    });
+
+    const items = getSliderItems();
+    if (items.length === 0) return;
+
+    if (state.sliderIndex >= items.length) state.sliderIndex = items.length - 1;
+    if (state.sliderIndex < 0) state.sliderIndex = 0;
+
+    items[state.sliderIndex].style.display = "";
+}
+
+function applyViewMode() {
+    const isSlider = state.viewMode === "slider";
+    videoGrid.classList.toggle("slider-view", isSlider);
+    sliderViewBtn.classList.toggle("active", isSlider);
+    updateToolbarVisibility();
+    applyFilters();
 }
 
 function syncMuteToggleBtn() {
@@ -272,6 +325,7 @@ function saveControlsState() {
                 labelsVisible: state.labelsVisible,
                 scrubberVisible: state.scrubberVisible,
                 sizeScale: state.sizeScale,
+                viewMode: state.viewMode,
             }),
         );
     } catch {
@@ -320,6 +374,11 @@ function applyControlsState(saved) {
         state.sizeScale = saved.sizeScale;
         sizeSelect.value = String(saved.sizeScale);
         applySizeToAll();
+    }
+
+    if (saved.viewMode === "grid" || saved.viewMode === "slider") {
+        state.viewMode = saved.viewMode;
+        applyViewMode();
     }
 }
 
@@ -465,6 +524,7 @@ function clearAll() {
     videoGrid.classList.remove("focus-mode");
     state.sort = { key: "name" };
     state.dimensionFilter = "all";
+    state.sliderIndex = 0;
     sortField.value = "name";
     refreshDimensionOptions();
 
@@ -576,6 +636,27 @@ scrubberBtn.addEventListener("click", () => {
     videoGrid.classList.toggle("hide-scrubber", !state.scrubberVisible);
     scrubberBtn.classList.toggle("active", state.scrubberVisible);
     saveControlsState();
+});
+
+sliderViewBtn.addEventListener("click", () => {
+    state.viewMode = state.viewMode === "slider" ? "grid" : "slider";
+    state.sliderIndex = 0;
+    applyViewMode();
+    saveControlsState();
+});
+
+sliderPrevBtn.addEventListener("click", () => {
+    const items = getSliderItems();
+    if (items.length === 0) return;
+    state.sliderIndex = (state.sliderIndex - 1 + items.length) % items.length;
+    renderSlider();
+});
+
+sliderNextBtn.addEventListener("click", () => {
+    const items = getSliderItems();
+    if (items.length === 0) return;
+    state.sliderIndex = (state.sliderIndex + 1) % items.length;
+    renderSlider();
 });
 
 themeToggle.addEventListener("click", () => {
