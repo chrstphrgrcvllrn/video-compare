@@ -166,6 +166,79 @@ body {
     background: var(--gray-50);
 }
 
+.release-notes-wrap {
+    position: relative;
+}
+
+.release-notes-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 10;
+    width: 280px;
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-lg);
+}
+
+.release-notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-default);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.release-notes-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.release-notes-close:hover {
+    background: var(--gray-50);
+}
+
+.release-notes-entry {
+    padding: 12px 14px;
+}
+
+.release-notes-entry + .release-notes-entry {
+    border-top: 1px solid var(--border-default);
+}
+
+.release-notes-date {
+    margin: 0 0 6px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.release-notes-entry ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
 .icon {
     width: 18px;
     height: 18px;
@@ -393,34 +466,39 @@ body {
 }
 
 .focus-button {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     appearance: none;
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    z-index: 2;
-    width: 28px;
-    height: 28px;
+    align-self: flex-end;
+    margin-top: 6px;
+    width: 24px;
+    height: 24px;
     border: none;
     border-radius: 6px;
-    background: var(--bg-surface);
-    color: var(--text-secondary);
+    background: transparent;
+    color: var(--text-tertiary);
     cursor: pointer;
-    box-shadow: var(--shadow-xs);
     opacity: 0;
-    transition: opacity 0.15s;
+    transition:
+        opacity 0.15s,
+        color 0.15s,
+        background 0.15s;
 }
 
 .focus-button .icon {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
 }
 
 .video-item:hover .focus-button,
 .focus-button:focus-visible {
     opacity: 1;
+}
+
+.focus-button:hover {
+    background: var(--gray-50);
+    color: var(--text-secondary);
 }
 
 .video-item.focused .focus-button {
@@ -429,8 +507,8 @@ body {
 }
 
 #videoGrid.focus-mode .video-item {
-    opacity: 0.35;
-    filter: brightness(0.6);
+    opacity: 0.18;
+    filter: brightness(0.35);
     transition:
         opacity 0.2s ease,
         filter 0.2s ease;

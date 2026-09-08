@@ -16,6 +16,7 @@ const ICON = {
     sun: '<path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />',
     moon: '<path d="M21.752 15.002A9.72 9.72 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />',
     focus: '<path d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />',
+    bell: '<path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />',
 };
 
 function icon(name) {
@@ -25,6 +26,13 @@ function icon(name) {
         "</svg>"
     );
 }
+
+const RELEASE_NOTES = [
+    {
+        date: "September 8, 2026",
+        items: ["Added focus mode to spotlight a single video", "Added spacebar shortcut to play/pause all videos"],
+    },
+];
 
 const state = {
     items: [],
@@ -49,6 +57,27 @@ app.innerHTML = `
                     <p class="hint">Press <kbd>Space</kbd> to play/pause all videos.</p>
                 </div>
                 <div class="header-actions">
+                    <div class="release-notes-wrap">
+                        <button id="releaseNotesToggle" class="icon-button" type="button" title="Release notes" aria-label="Release notes">
+                            ${icon("bell")}
+                        </button>
+                        <div id="releaseNotesPanel" class="release-notes-panel" hidden>
+                            <div class="release-notes-header">
+                                <span>What's new</span>
+                                <button id="releaseNotesClose" class="release-notes-close" type="button" aria-label="Close">&times;</button>
+                            </div>
+                            ${RELEASE_NOTES.map(
+                                (release) => `
+                                <div class="release-notes-entry">
+                                    <p class="release-notes-date">${release.date}</p>
+                                    <ul>
+                                        ${release.items.map((item) => `<li>${item}</li>`).join("")}
+                                    </ul>
+                                </div>
+                            `,
+                            ).join("")}
+                        </div>
+                    </div>
                     <button id="themeToggle" class="icon-button" type="button" title="Toggle theme" aria-label="Toggle theme">
                         <span class="icon-sun">${icon("sun")}</span>
                         <span class="icon-moon">${icon("moon")}</span>
@@ -108,6 +137,9 @@ const fileInput = document.getElementById("fileInput");
 const selectBtn = document.getElementById("selectBtn");
 const clearBtn = document.getElementById("clearBtn");
 const themeToggle = document.getElementById("themeToggle");
+const releaseNotesToggle = document.getElementById("releaseNotesToggle");
+const releaseNotesPanel = document.getElementById("releaseNotesPanel");
+const releaseNotesClose = document.getElementById("releaseNotesClose");
 const controls = document.getElementById("controls");
 const sortField = document.getElementById("sortField");
 const dimensionFilter = document.getElementById("dimensionFilter");
@@ -378,8 +410,8 @@ function buildItem(item) {
     });
 
     wrapper.appendChild(selectCheckbox);
-    wrapper.appendChild(focusBtn);
     wrapper.appendChild(video);
+    wrapper.appendChild(focusBtn);
     wrapper.appendChild(scrubber);
     wrapper.appendChild(timeLabel);
     wrapper.appendChild(nameEl);
@@ -524,6 +556,27 @@ compareBtn.addEventListener("click", () => {
 
 themeToggle.addEventListener("click", () => {
     applyTheme(state.theme === "dark" ? "light" : "dark");
+});
+
+releaseNotesToggle.addEventListener("click", () => {
+    releaseNotesPanel.hidden = !releaseNotesPanel.hidden;
+});
+
+releaseNotesClose.addEventListener("click", () => {
+    releaseNotesPanel.hidden = true;
+});
+
+document.addEventListener("click", (e) => {
+    if (releaseNotesPanel.hidden) return;
+    if (e.target === releaseNotesToggle || releaseNotesToggle.contains(e.target)) return;
+    if (releaseNotesPanel.contains(e.target)) return;
+    releaseNotesPanel.hidden = true;
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !releaseNotesPanel.hidden) {
+        releaseNotesPanel.hidden = true;
+    }
 });
 
 document.querySelectorAll(".speed-button").forEach((button) => {
