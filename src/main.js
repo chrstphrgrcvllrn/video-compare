@@ -15,6 +15,7 @@ const ICON = {
     funnel: '<path d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />',
     sun: '<path d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />',
     moon: '<path d="M21.752 15.002A9.72 9.72 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />',
+    focus: '<path d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />',
 };
 
 function icon(name) {
@@ -304,6 +305,20 @@ function buildItem(item) {
         applyFilters();
     });
 
+    const focusBtn = document.createElement("button");
+    focusBtn.type = "button";
+    focusBtn.className = "focus-button";
+    focusBtn.title = "Focus this video";
+    focusBtn.setAttribute("aria-label", "Focus this video");
+    focusBtn.innerHTML = icon("focus");
+
+    focusBtn.addEventListener("click", () => {
+        const alreadyFocused = wrapper.classList.contains("focused");
+        videoGrid.querySelectorAll(".video-item.focused").forEach((el) => el.classList.remove("focused"));
+        videoGrid.classList.toggle("focus-mode", !alreadyFocused);
+        wrapper.classList.toggle("focused", !alreadyFocused);
+    });
+
     const video = document.createElement("video");
     video.src = item.url;
     video.autoplay = true;
@@ -363,6 +378,7 @@ function buildItem(item) {
     });
 
     wrapper.appendChild(selectCheckbox);
+    wrapper.appendChild(focusBtn);
     wrapper.appendChild(video);
     wrapper.appendChild(scrubber);
     wrapper.appendChild(timeLabel);
@@ -393,6 +409,7 @@ function clearAll() {
     state.items.forEach((item) => URL.revokeObjectURL(item.url));
     state.items = [];
     videoGrid.innerHTML = "";
+    videoGrid.classList.remove("focus-mode");
     state.sort = { key: "name" };
     state.filterSelected = false;
     state.dimensionFilter = "all";

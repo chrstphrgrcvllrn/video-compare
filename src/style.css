@@ -392,6 +392,56 @@ body {
     background-size: 12px 12px;
 }
 
+.focus-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    appearance: none;
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.focus-button .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.video-item:hover .focus-button,
+.focus-button:focus-visible {
+    opacity: 1;
+}
+
+.video-item.focused .focus-button {
+    opacity: 1;
+    color: var(--brand-600);
+}
+
+#videoGrid.focus-mode .video-item {
+    opacity: 0.35;
+    filter: brightness(0.6);
+    transition:
+        opacity 0.2s ease,
+        filter 0.2s ease;
+}
+
+#videoGrid.focus-mode .video-item.focused {
+    opacity: 1;
+    filter: none;
+    z-index: 1;
+}
+
 .video-item video {
     display: block;
 }
