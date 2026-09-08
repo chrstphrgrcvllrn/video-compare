@@ -24,6 +24,8 @@ const ICON = {
     grid: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />',
     chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
+    play: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />',
+    pause: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />',
 };
 
 function icon(name) {
@@ -43,6 +45,7 @@ const RELEASE_NOTES = [
             "Added mute/unmute per video, plus a Mute All / Unmute All toggle",
             "Removed the select/compare checkbox in favor of focus mode",
             "Added a slider view to step through videos one at a time",
+            "Added a Playing/Paused toast when using the spacebar shortcut",
         ],
     },
 ];
@@ -153,6 +156,11 @@ app.innerHTML = `
             </div>
         </div>
     </div>
+
+    <div id="playbackToast" class="toast" hidden>
+        <span id="playbackToastIcon" class="toast-icon"></span>
+        <span id="playbackToastText" class="toast-text"></span>
+    </div>
 `;
 
 const dropzone = document.getElementById("dropzone");
@@ -178,6 +186,9 @@ const sliderPrevBtn = document.getElementById("sliderPrevBtn");
 const sliderNextBtn = document.getElementById("sliderNextBtn");
 const videoGrid = document.getElementById("videoGrid");
 const videoStage = document.getElementById("videoStage");
+const playbackToast = document.getElementById("playbackToast");
+const playbackToastIcon = document.getElementById("playbackToastIcon");
+const playbackToastText = document.getElementById("playbackToastText");
 
 function isVideoFile(file) {
     if (file.type && file.type.startsWith("video/")) return true;
@@ -732,6 +743,25 @@ document.querySelectorAll(".speed-button").forEach((button) => {
     });
 });
 
+let playbackToastTimer = null;
+
+function showPlaybackToast(isPlaying) {
+    playbackToastIcon.innerHTML = icon(isPlaying ? "play" : "pause");
+    playbackToastText.textContent = isPlaying ? "Playing" : "Paused";
+    playbackToast.hidden = false;
+    // Force reflow so the transition re-triggers on rapid toggles.
+    void playbackToast.offsetWidth;
+    playbackToast.classList.add("visible");
+
+    clearTimeout(playbackToastTimer);
+    playbackToastTimer = setTimeout(() => {
+        playbackToast.classList.remove("visible");
+        playbackToastTimer = setTimeout(() => {
+            playbackToast.hidden = true;
+        }, 200);
+    }, 1000);
+}
+
 function toggleAllPlayback() {
     const scope = videoGrid.classList.contains("focus-mode") ? ".video-item.focused video" : "video";
     const videos = Array.from(videoGrid.querySelectorAll(scope));
@@ -745,6 +775,8 @@ function toggleAllPlayback() {
             video.play().catch(() => {});
         }
     });
+
+    showPlaybackToast(!anyPlaying);
 }
 
 document.addEventListener("keydown", (e) => {

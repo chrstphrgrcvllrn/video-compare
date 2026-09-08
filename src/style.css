@@ -663,3 +663,45 @@ body {
     background: var(--brand-600);
     color: #fff;
 }
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    z-index: 100;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(17, 24, 39, 0.92);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 8px);
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.toast[hidden] {
+    display: none;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.toast-icon {
+    display: flex;
+}
+
+.toast-icon .icon {
+    width: 16px;
+    height: 16px;
+    stroke: #fff;
+}
