@@ -345,10 +345,9 @@ function buildItem(item) {
     focusBtn.innerHTML = icon("focus");
 
     focusBtn.addEventListener("click", () => {
-        const alreadyFocused = wrapper.classList.contains("focused");
-        videoGrid.querySelectorAll(".video-item.focused").forEach((el) => el.classList.remove("focused"));
-        videoGrid.classList.toggle("focus-mode", !alreadyFocused);
-        wrapper.classList.toggle("focused", !alreadyFocused);
+        wrapper.classList.toggle("focused");
+        const anyFocused = videoGrid.querySelector(".video-item.focused") !== null;
+        videoGrid.classList.toggle("focus-mode", anyFocused);
     });
 
     const video = document.createElement("video");
