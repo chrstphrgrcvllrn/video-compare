@@ -7,6 +7,7 @@ const THEME_KEY = "video-preview-theme";
 const CONTROLS_KEY = "video-preview-controls";
 const NOTEPAD_CONTENT_KEY = "video-preview-notepad-content";
 const NOTEPAD_OPEN_KEY = "video-preview-notepad-open";
+const SORT_FILTER_OPEN_KEY = "video-preview-sort-filter-open";
 const RELEASE_NOTES_SEEN_KEY = "video-preview-release-notes-seen";
 
 const ICON = {
@@ -78,6 +79,7 @@ const RELEASE_NOTES = [
             "Made per-video Replay and Focus buttons always visible instead of hover-only",
             "Added a Videos section to Sort & Filter for filtering by specific video name",
             "Added a per-video play/pause toggle button next to mute/unmute",
+            "Turned Sort & Filter into an expandable side panel (like Notepad, but from the left), with All / None quick-select for Videos and Dimension",
         ],
     },
 ];
@@ -101,6 +103,51 @@ const app = document.getElementById("app");
 
 app.innerHTML = `
     <div class="page">
+        <aside id="sortFilterPanel" class="side-panel side-panel-left" hidden>
+            <div class="side-panel-header">
+                <span class="side-panel-title">Sort &amp; Filter</span>
+                <button id="sortFilterCloseBtn" class="side-panel-icon-btn" type="button" aria-label="Close sort &amp; filter">&times;</button>
+            </div>
+            <div class="side-panel-body">
+                <div class="sort-filter-section">
+                    <div class="sort-filter-section-title">Sort by</div>
+                    <label class="sort-filter-option">
+                        <input type="radio" name="sortRadio" value="name" checked />
+                        <span>Name</span>
+                    </label>
+                    <label class="sort-filter-option">
+                        <input type="radio" name="sortRadio" value="dimension" />
+                        <span>Dimension</span>
+                    </label>
+                </div>
+                <div class="sort-filter-section">
+                    <div class="sort-filter-section-header">
+                        <div class="sort-filter-section-title">Videos</div>
+                        <div class="sort-filter-select-actions">
+                            <button type="button" class="sort-filter-link" data-target="nameCheckboxList" data-action="all">All</button>
+                            <span class="sort-filter-link-sep">/</span>
+                            <button type="button" class="sort-filter-link" data-target="nameCheckboxList" data-action="none">None</button>
+                        </div>
+                    </div>
+                    <div id="nameCheckboxList" class="sort-filter-checklist">
+                        <p class="sort-filter-empty">No videos yet</p>
+                    </div>
+                </div>
+                <div class="sort-filter-section">
+                    <div class="sort-filter-section-header">
+                        <div class="sort-filter-section-title">Dimension</div>
+                        <div class="sort-filter-select-actions">
+                            <button type="button" class="sort-filter-link" data-target="dimensionCheckboxList" data-action="all">All</button>
+                            <span class="sort-filter-link-sep">/</span>
+                            <button type="button" class="sort-filter-link" data-target="dimensionCheckboxList" data-action="none">None</button>
+                        </div>
+                    </div>
+                    <div id="dimensionCheckboxList" class="sort-filter-checklist">
+                        <p class="sort-filter-empty">No videos yet</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
         <div class="panel">
             <header class="panel-header">
                 <div id="dropzone">
@@ -152,36 +199,9 @@ app.innerHTML = `
             </header>
 
             <div id="controls" hidden>
-                <div class="sort-filter-wrap">
-                    <button id="sortFilterToggle" class="chip-button" type="button">
-                        ${icon("funnel")}<span class="btn-label">Sort &amp; Filter</span>
-                    </button>
-                    <div id="sortFilterPanel" class="sort-filter-panel" hidden>
-                        <div class="sort-filter-section">
-                            <div class="sort-filter-section-title">Sort by</div>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sortRadio" value="name" checked />
-                                <span>Name</span>
-                            </label>
-                            <label class="sort-filter-option">
-                                <input type="radio" name="sortRadio" value="dimension" />
-                                <span>Dimension</span>
-                            </label>
-                        </div>
-                        <div class="sort-filter-section">
-                            <div class="sort-filter-section-title">Videos</div>
-                            <div id="nameCheckboxList" class="sort-filter-checklist">
-                                <p class="sort-filter-empty">No videos yet</p>
-                            </div>
-                        </div>
-                        <div class="sort-filter-section">
-                            <div class="sort-filter-section-title">Dimension</div>
-                            <div id="dimensionCheckboxList" class="sort-filter-checklist">
-                                <p class="sort-filter-empty">No videos yet</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <button id="sortFilterToggle" class="chip-button" type="button">
+                    ${icon("funnel")}<span class="btn-label">Sort &amp; Filter</span>
+                </button>
                 <div class="sort-group">
                     <label for="sizeInput">Size</label>
                     <div class="number-spinner" id="sizeSpinner">
@@ -221,15 +241,15 @@ app.innerHTML = `
             </div>
         </div>
 
-        <aside id="notepadPanel" class="notepad-panel" hidden>
-            <div class="notepad-header">
-                <span class="notepad-title">Notepad</span>
-                <div class="notepad-header-actions">
-                    <button id="notepadClearBtn" class="notepad-icon-btn" type="button" title="Clear notes" aria-label="Clear notes">${icon("trash")}</button>
-                    <button id="notepadCloseBtn" class="notepad-icon-btn" type="button" aria-label="Close notepad">&times;</button>
+        <aside id="notepadPanel" class="side-panel side-panel-right notepad-panel" hidden>
+            <div class="side-panel-header">
+                <span class="side-panel-title">Notepad</span>
+                <div class="side-panel-header-actions">
+                    <button id="notepadClearBtn" class="side-panel-icon-btn" type="button" title="Clear notes" aria-label="Clear notes">${icon("trash")}</button>
+                    <button id="notepadCloseBtn" class="side-panel-icon-btn" type="button" aria-label="Close notepad">&times;</button>
                 </div>
             </div>
-            <div id="notepadEditor" class="notepad-editor"></div>
+            <div id="notepadEditor" class="side-panel-body"></div>
         </aside>
     </div>
 
@@ -251,6 +271,7 @@ const releaseNotesClose = document.getElementById("releaseNotesClose");
 const controls = document.getElementById("controls");
 const sortFilterToggle = document.getElementById("sortFilterToggle");
 const sortFilterPanel = document.getElementById("sortFilterPanel");
+const sortFilterCloseBtn = document.getElementById("sortFilterCloseBtn");
 const dimensionCheckboxList = document.getElementById("dimensionCheckboxList");
 const nameCheckboxList = document.getElementById("nameCheckboxList");
 const sizeInput = document.getElementById("sizeInput");
@@ -919,21 +940,52 @@ dropzone.addEventListener("drop", (e) => {
     }
 });
 
-sortFilterToggle.addEventListener("click", () => {
-    sortFilterPanel.hidden = !sortFilterPanel.hidden;
-});
+let sortFilterCloseTimer = null;
 
-document.addEventListener("click", (e) => {
-    if (sortFilterPanel.hidden) return;
-    if (e.target === sortFilterToggle || sortFilterToggle.contains(e.target)) return;
-    if (sortFilterPanel.contains(e.target)) return;
-    sortFilterPanel.hidden = true;
-});
+function setSortFilterOpen(open) {
+    clearTimeout(sortFilterCloseTimer);
 
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !sortFilterPanel.hidden) {
-        sortFilterPanel.hidden = true;
+    if (open) {
+        sortFilterPanel.hidden = false;
+        // Force reflow so the transition runs from the closed state.
+        void sortFilterPanel.offsetWidth;
+        sortFilterPanel.classList.add("open");
+    } else {
+        sortFilterPanel.classList.remove("open");
+        sortFilterCloseTimer = setTimeout(() => {
+            sortFilterPanel.hidden = true;
+        }, 220);
     }
+
+    try {
+        localStorage.setItem(SORT_FILTER_OPEN_KEY, open ? "1" : "0");
+    } catch {
+        /* localStorage unavailable */
+    }
+}
+
+sortFilterToggle.addEventListener("click", () => {
+    setSortFilterOpen(sortFilterPanel.hidden);
+});
+
+sortFilterCloseBtn.addEventListener("click", () => setSortFilterOpen(false));
+
+document.querySelectorAll(".sort-filter-link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        const listEl = document.getElementById(btn.dataset.target);
+        const targetSet = listEl === nameCheckboxList ? state.nameFilters : state.dimensionFilters;
+        const selectAll = btn.dataset.action === "all";
+        listEl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+            cb.checked = selectAll;
+            if (selectAll) {
+                targetSet.add(cb.value);
+            } else {
+                targetSet.delete(cb.value);
+            }
+        });
+        updateSortFilterToggleLabel();
+        applyFilters();
+    });
 });
 
 sortFilterPanel.querySelectorAll('input[name="sortRadio"]').forEach((radio) => {
@@ -1204,6 +1256,16 @@ function initNotepad() {
     }
 }
 
+function initSortFilter() {
+    try {
+        if (localStorage.getItem(SORT_FILTER_OPEN_KEY) === "1") {
+            setSortFilterOpen(true);
+        }
+    } catch {
+        /* localStorage unavailable */
+    }
+}
+
 document.querySelectorAll(".speed-button").forEach((button) => {
     button.addEventListener("click", () => {
         const speed = Number(button.dataset.speed);
@@ -1288,4 +1350,5 @@ initTheme();
 applyControlsState(loadControlsState());
 syncMuteToggleBtn();
 initNotepad();
+initSortFilter();
 updateReleaseNotesDot();

@@ -481,30 +481,8 @@ body {
     margin: 0;
 }
 
-.sort-filter-wrap {
-    position: relative;
-}
-
-.sort-filter-panel {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    z-index: 25;
-    width: 240px;
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid var(--border-default);
-    border-radius: 10px;
-    background: var(--bg-panel);
-    box-shadow: var(--shadow-lg);
-}
-
-.sort-filter-panel[hidden] {
-    display: none;
-}
-
 .sort-filter-section {
-    padding: 12px 16px;
+    padding: 14px 20px;
 }
 
 .sort-filter-section + .sort-filter-section {
@@ -518,6 +496,42 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+}
+
+.sort-filter-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.sort-filter-section-header .sort-filter-section-title {
+    margin-bottom: 0;
+}
+
+.sort-filter-select-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sort-filter-link {
+    border: none;
+    background: transparent;
+    color: var(--brand-600);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.sort-filter-link:hover {
+    text-decoration: underline;
+}
+
+.sort-filter-link-sep {
+    color: var(--text-tertiary);
+    font-size: 12px;
 }
 
 .sort-filter-option {
@@ -953,7 +967,7 @@ body {
     stroke: #fff;
 }
 
-.notepad-panel {
+.side-panel {
     width: 0;
     height: 100vh;
     position: sticky;
@@ -962,7 +976,6 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-left: 1px solid transparent;
     background: var(--bg-surface);
     opacity: 0;
     transition:
@@ -971,17 +984,32 @@ body {
         border-color 0.22s ease;
 }
 
-.notepad-panel[hidden] {
+.side-panel[hidden] {
     display: none;
 }
 
-.notepad-panel.open {
-    width: 360px;
-    opacity: 1;
+.side-panel-right {
+    border-left: 1px solid transparent;
+}
+
+.side-panel-right.open {
     border-left-color: var(--border-subtle);
 }
 
-.notepad-header {
+.side-panel-left {
+    border-right: 1px solid transparent;
+}
+
+.side-panel-left.open {
+    border-right-color: var(--border-subtle);
+}
+
+.side-panel.open {
+    width: 360px;
+    opacity: 1;
+}
+
+.side-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -991,19 +1019,19 @@ body {
     border-bottom: 1px solid var(--border-subtle);
 }
 
-.notepad-title {
+.side-panel-title {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.notepad-header-actions {
+.side-panel-header-actions {
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.notepad-icon-btn {
+.side-panel-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1021,23 +1049,24 @@ body {
         color 0.15s;
 }
 
-.notepad-icon-btn:hover {
+.side-panel-icon-btn:hover {
     background: var(--gray-50);
     color: var(--text-secondary);
 }
 
-.notepad-icon-btn .icon {
+.side-panel-icon-btn .icon {
     width: 15px;
     height: 15px;
 }
 
-.notepad-editor {
+.side-panel-body {
     display: flex;
     flex-direction: column;
     flex: 1;
     width: 360px;
     flex-shrink: 0;
     min-height: 0;
+    overflow-y: auto;
 }
 
 .notepad-panel .ql-toolbar.ql-snow {
@@ -1110,12 +1139,13 @@ body {
         flex-direction: column;
     }
 
-    .notepad-panel {
+    .side-panel {
         width: 100%;
         height: auto;
         position: static;
         max-height: 0;
         border-left: none;
+        border-right: none;
         border-top: 1px solid transparent;
         transition:
             max-height 0.22s ease,
@@ -1123,13 +1153,13 @@ body {
             border-color 0.22s ease;
     }
 
-    .notepad-panel.open {
+    .side-panel.open {
         max-height: 320px;
         border-top-color: var(--border-subtle);
     }
 
-    .notepad-header,
-    .notepad-editor {
+    .side-panel-header,
+    .side-panel-body {
         width: auto;
     }
 }
