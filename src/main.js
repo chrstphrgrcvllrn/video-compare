@@ -414,7 +414,11 @@ function buildItem(item) {
         video.currentTime = Number(scrubber.value);
     });
 
-    wrapper.appendChild(video);
+    const videoFrame = document.createElement("div");
+    videoFrame.className = "video-frame";
+    videoFrame.appendChild(video);
+
+    wrapper.appendChild(videoFrame);
     wrapper.appendChild(videoToolbar);
     wrapper.appendChild(scrubber);
     wrapper.appendChild(timeLabel);

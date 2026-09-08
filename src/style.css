@@ -433,9 +433,11 @@ body {
     align-items: center;
 }
 
-.video-toolbar {
+.video-frame {
     position: relative;
-    z-index: 2;
+}
+
+.video-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -495,18 +497,16 @@ body {
     opacity: 1;
 }
 
-#videoGrid.focus-mode .video-item::after {
+#videoGrid.focus-mode .video-frame::after {
     content: "";
     position: absolute;
     inset: 0;
-    z-index: 1;
-    border-radius: 8px;
     background: rgba(0, 0, 0, 0.75);
     pointer-events: none;
     transition: opacity 0.2s ease;
 }
 
-#videoGrid.focus-mode .video-item.focused::after {
+#videoGrid.focus-mode .video-item.focused .video-frame::after {
     opacity: 0;
 }
 
