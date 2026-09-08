@@ -4,6 +4,8 @@ Preview and compare local video files side by side, all in the browser — nothi
 
 Live at: https://chrstphrgrcvllrn.github.io/video-compare/
 
+![video-compare preview](screenshot/preview.png)
+
 ## Why
 
 Comparing a batch of video creatives one at a time in Finder's Quick Look is slow. This tool lets you select (or drag & drop) a whole batch of local video files and plays them all at once, side by side, so you can eyeball a set of exports together instead of clicking through them one by one.
