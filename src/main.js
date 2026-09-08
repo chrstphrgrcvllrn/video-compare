@@ -8,7 +8,6 @@ const CONTROLS_KEY = "video-preview-controls";
 const NOTEPAD_CONTENT_KEY = "video-preview-notepad-content";
 const NOTEPAD_OPEN_KEY = "video-preview-notepad-open";
 const RELEASE_NOTES_SEEN_KEY = "video-preview-release-notes-seen";
-const INFO_BANNER_COLLAPSED_KEY = "video-preview-info-banner-collapsed";
 
 const ICON = {
     upload: '<path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />',
@@ -31,9 +30,10 @@ const ICON = {
     funnel: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />',
     chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
-    chevronDown: '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />',
     arrowsExpand:
         '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />',
+    megaphone:
+        '<path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46" />',
     play: '<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />',
     pause: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />',
     note: '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />',
@@ -63,6 +63,8 @@ const RELEASE_NOTES = [
             "Added a red dot on the bell icon when there's a release you haven't seen yet",
             "Added a Per Row control to cap how many videos show per row",
             "Added a sliding transition when navigating between videos in Slider View",
+            "Combined Size and Per Row into one Size & Layout dropdown",
+            "Moved the intro text to a megaphone icon toast next to the bell, and merged Select Videos onto the same row as the header buttons",
         ],
     },
 ];
@@ -86,17 +88,13 @@ const app = document.getElementById("app");
 app.innerHTML = `
     <div class="page">
         <div class="panel">
-            <div id="infoBanner" class="info-banner">
-                <div class="info-banner-text">
-                    <p class="subtitle">Select local video files to preview, sort, and compare — nothing leaves your browser.</p>
-                    <p class="hint">Press <kbd>Space</kbd> to play/pause all videos.</p>
-                </div>
-                <button id="infoBannerToggle" class="info-banner-toggle" type="button" title="Collapse" aria-label="Collapse banner">
-                    ${icon("chevronDown")}
-                </button>
-            </div>
-
             <header class="panel-header">
+                <div id="dropzone">
+                    <input id="fileInput" type="file" accept="video/*" multiple hidden />
+                    <button id="selectBtn" class="btn btn-primary" type="button">${icon("upload")}<span class="btn-label">Select Videos</span></button>
+                    <button id="clearBtn" class="btn btn-secondary" type="button" hidden>${icon("trash")}<span class="btn-label">Clear Selected</span></button>
+                    <span id="dropHint">or drag &amp; drop video files here</span>
+                </div>
                 <div class="header-actions">
                     <button id="notepadToggle" class="icon-button" type="button" title="Notepad" aria-label="Toggle notepad">
                         ${icon("note")}
@@ -123,19 +121,21 @@ app.innerHTML = `
                             ).join("")}
                         </div>
                     </div>
+                    <div class="info-toast-wrap">
+                        <button id="infoToastToggle" class="icon-button" type="button" title="About this tool" aria-label="About this tool">
+                            ${icon("megaphone")}
+                        </button>
+                        <div id="infoToastPanel" class="info-toast-panel" hidden>
+                            <p class="subtitle">Select local video files to preview, sort, and compare — nothing leaves your browser.</p>
+                            <p class="hint">Press <kbd>Space</kbd> to play/pause all videos.</p>
+                        </div>
+                    </div>
                     <button id="themeToggle" class="icon-button" type="button" title="Toggle theme" aria-label="Toggle theme">
                         <span class="icon-sun">${icon("sun")}</span>
                         <span class="icon-moon">${icon("moon")}</span>
                     </button>
                 </div>
             </header>
-
-            <div id="dropzone">
-                <input id="fileInput" type="file" accept="video/*" multiple hidden />
-                <button id="selectBtn" class="btn btn-primary" type="button">${icon("upload")}<span class="btn-label">Select Videos</span></button>
-                <button id="clearBtn" class="btn btn-secondary" type="button" hidden>${icon("trash")}<span class="btn-label">Clear Selected</span></button>
-                <span id="dropHint">or drag &amp; drop video files here</span>
-            </div>
 
             <div id="controls" hidden>
                 <div class="sort-filter-wrap">
@@ -293,8 +293,8 @@ const videoStage = document.getElementById("videoStage");
 const playbackToast = document.getElementById("playbackToast");
 const playbackToastIcon = document.getElementById("playbackToastIcon");
 const playbackToastText = document.getElementById("playbackToastText");
-const infoBanner = document.getElementById("infoBanner");
-const infoBannerToggle = document.getElementById("infoBannerToggle");
+const infoToastToggle = document.getElementById("infoToastToggle");
+const infoToastPanel = document.getElementById("infoToastPanel");
 const notepadToggle = document.getElementById("notepadToggle");
 const notepadPanel = document.getElementById("notepadPanel");
 const notepadCloseBtn = document.getElementById("notepadCloseBtn");
@@ -1035,29 +1035,21 @@ function markReleaseNotesSeen() {
     releaseNotesDot.hidden = true;
 }
 
-function setInfoBannerCollapsed(collapsed) {
-    infoBanner.classList.toggle("collapsed", collapsed);
-    infoBannerToggle.title = collapsed ? "Expand" : "Collapse";
-    infoBannerToggle.setAttribute("aria-label", collapsed ? "Expand banner" : "Collapse banner");
-    try {
-        localStorage.setItem(INFO_BANNER_COLLAPSED_KEY, collapsed ? "1" : "0");
-    } catch {
-        /* localStorage unavailable */
-    }
-}
+infoToastToggle.addEventListener("click", () => {
+    infoToastPanel.hidden = !infoToastPanel.hidden;
+});
 
-function initInfoBanner() {
-    let collapsed = false;
-    try {
-        collapsed = localStorage.getItem(INFO_BANNER_COLLAPSED_KEY) === "1";
-    } catch {
-        /* localStorage unavailable */
-    }
-    setInfoBannerCollapsed(collapsed);
-}
+document.addEventListener("click", (e) => {
+    if (infoToastPanel.hidden) return;
+    if (e.target === infoToastToggle || infoToastToggle.contains(e.target)) return;
+    if (infoToastPanel.contains(e.target)) return;
+    infoToastPanel.hidden = true;
+});
 
-infoBannerToggle.addEventListener("click", () => {
-    setInfoBannerCollapsed(!infoBanner.classList.contains("collapsed"));
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !infoToastPanel.hidden) {
+        infoToastPanel.hidden = true;
+    }
 });
 
 releaseNotesToggle.addEventListener("click", () => {
@@ -1240,4 +1232,3 @@ applyControlsState(loadControlsState());
 syncMuteToggleBtn();
 initNotepad();
 updateReleaseNotesDot();
-initInfoBanner();
