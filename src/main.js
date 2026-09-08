@@ -170,6 +170,7 @@ app.innerHTML = `
                         <option value="3">3</option>
                         <option value="4">4</option>
                         <option value="5">5</option>
+                        <option value="6">6</option>
                     </select>
                 </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
@@ -506,7 +507,7 @@ function applyControlsState(saved) {
         applySizeToAll();
     }
 
-    const validPerRow = ["default", "1", "2", "3", "4", "5"];
+    const validPerRow = ["default", "1", "2", "3", "4", "5", "6"];
     if (validPerRow.includes(saved.perRow)) {
         state.perRow = saved.perRow;
         perRowSelect.value = saved.perRow;
