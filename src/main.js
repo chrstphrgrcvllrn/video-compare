@@ -356,27 +356,10 @@ function applySizeToAll() {
     applyPerRow();
 }
 
-const GRID_GAP_PX = 20;
-
 function applyPerRow() {
     const active = isPerRowGridActive();
     videoGrid.classList.toggle("per-row-active", active);
-
-    if (!active) {
-        videoGrid.style.gridTemplateColumns = "";
-        return;
-    }
-
-    const n = Number(state.perRow);
-    let maxItemWidth = 0;
-    videoGrid.querySelectorAll(".video-item").forEach((wrapper) => {
-        maxItemWidth = Math.max(maxItemWidth, parseFloat(wrapper.style.width) || 0);
-    });
-    const minTrack = (maxItemWidth || 1) + "px";
-    const fairShare = "calc((100% - " + (n - 1) * GRID_GAP_PX + "px) / " + n + ")";
-
-    videoGrid.style.gridTemplateColumns =
-        "repeat(auto-fill, minmax(max(" + minTrack + ", " + fairShare + "), 1fr))";
+    videoGrid.style.gridTemplateColumns = active ? "repeat(" + state.perRow + ", minmax(0, 1fr))" : "";
 }
 
 function matchesDimensionFilter(el) {

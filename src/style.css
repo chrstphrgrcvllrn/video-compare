@@ -563,6 +563,16 @@ body {
     justify-items: center;
 }
 
+#videoGrid.per-row-active .video-item {
+    max-width: 100%;
+}
+
+#videoGrid.per-row-active .video-frame,
+#videoGrid.per-row-active .video-frame video {
+    max-width: 100%;
+    height: auto;
+}
+
 #videoGrid.hide-labels .video-name {
     display: none;
 }
