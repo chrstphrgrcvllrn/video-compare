@@ -598,7 +598,8 @@ document.querySelectorAll(".speed-button").forEach((button) => {
 });
 
 function toggleAllPlayback() {
-    const videos = Array.from(videoGrid.querySelectorAll("video"));
+    const scope = videoGrid.classList.contains("focus-mode") ? ".video-item.focused video" : "video";
+    const videos = Array.from(videoGrid.querySelectorAll(scope));
     if (videos.length === 0) return;
 
     const anyPlaying = videos.some((video) => !video.paused);
