@@ -786,24 +786,8 @@ body {
     color: var(--brand-600);
 }
 
-.replay-button,
-.focus-button {
-    opacity: 0;
-}
-
-.video-item:hover .replay-button,
-.replay-button:focus-visible,
-.video-item:hover .focus-button,
-.focus-button:focus-visible {
-    opacity: 1;
-}
-
 .video-item.focused .focus-button {
     color: var(--brand-600);
-}
-
-#videoGrid.focus-mode .focus-button {
-    opacity: 1;
 }
 
 #videoGrid.focus-mode .video-frame::after {
