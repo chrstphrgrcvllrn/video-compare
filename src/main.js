@@ -20,8 +20,8 @@ const ICON = {
         '<path d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
     speakerOff:
         '<path d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.483 0-.964-.078-1.423-.23l-.108-.036A1.125 1.125 0 012.25 15.06v-6.12a1.125 1.125 0 01.729-1.052l.108-.036c.46-.153.94-.231 1.423-.231H6.75z" />',
-    viewColumns:
-        '<path d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />',
+    singleFrame: '<rect x="5.25" y="5.25" width="13.5" height="13.5" rx="2.25" />',
+    grid: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />',
     chevronLeft: '<path d="M15.75 19.5L8.25 12l7.5-7.5" />',
     chevronRight: '<path d="M8.25 4.5l7.5 7.5-7.5 7.5" />',
 };
@@ -131,11 +131,14 @@ app.innerHTML = `
                     </select>
                 </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Refresh</span></button>
-                <button id="muteToggleBtn" class="chip-button" type="button">${icon("speakerOff")}<span class="btn-label">Mute All</span></button>
-                <button id="unfocusAllBtn" class="chip-button" type="button">${icon("focus")}<span class="btn-label">Unfocus All</span></button>
+                <button id="muteToggleBtn" class="chip-button chip-button-icon" type="button" title="Mute All" aria-label="Mute All">${icon("speakerOff")}</button>
+                <button id="unfocusAllBtn" class="chip-button chip-button-icon" type="button" title="Unfocus All" aria-label="Unfocus All">${icon("focus")}</button>
                 <button id="labelsBtn" class="chip-button active" type="button">${icon("tag")}<span class="btn-label">Labels</span></button>
                 <button id="scrubberBtn" class="chip-button active" type="button">${icon("sliders")}<span class="btn-label">Scrubber</span></button>
-                <button id="sliderViewBtn" class="chip-button" type="button">${icon("viewColumns")}<span class="btn-label">Slider View</span></button>
+                <div id="viewModeSwitch" class="view-mode-switch">
+                    <button id="sliderModeBtn" class="view-mode-option" type="button" title="Slider view" aria-label="Slider view">${icon("singleFrame")}</button>
+                    <button id="gridModeBtn" class="view-mode-option active" type="button" title="Grid view" aria-label="Grid view">${icon("grid")}</button>
+                </div>
                 <div id="speedToggle">
                     <button class="speed-button active" data-speed="1" type="button">1x</button>
                     <button class="speed-button" data-speed="0.5" type="button">0.5x</button>
@@ -169,10 +172,12 @@ const muteToggleBtn = document.getElementById("muteToggleBtn");
 const unfocusAllBtn = document.getElementById("unfocusAllBtn");
 const labelsBtn = document.getElementById("labelsBtn");
 const scrubberBtn = document.getElementById("scrubberBtn");
-const sliderViewBtn = document.getElementById("sliderViewBtn");
+const sliderModeBtn = document.getElementById("sliderModeBtn");
+const gridModeBtn = document.getElementById("gridModeBtn");
 const sliderPrevBtn = document.getElementById("sliderPrevBtn");
 const sliderNextBtn = document.getElementById("sliderNextBtn");
 const videoGrid = document.getElementById("videoGrid");
+const videoStage = document.getElementById("videoStage");
 
 function isVideoFile(file) {
     if (file.type && file.type.startsWith("video/")) return true;
@@ -266,6 +271,18 @@ function getSliderItems() {
     return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesDimensionFilter);
 }
 
+function positionSliderArrows(currentItem) {
+    const frame = currentItem && currentItem.querySelector(".video-frame");
+    if (!frame) return;
+
+    const stageRect = videoStage.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    const centerY = frameRect.top - stageRect.top + frameRect.height / 2;
+
+    sliderPrevBtn.style.top = centerY + "px";
+    sliderNextBtn.style.top = centerY + "px";
+}
+
 function renderSlider() {
     const allItems = Array.from(videoGrid.querySelectorAll(".video-item"));
     allItems.forEach((el) => {
@@ -278,13 +295,16 @@ function renderSlider() {
     if (state.sliderIndex >= items.length) state.sliderIndex = items.length - 1;
     if (state.sliderIndex < 0) state.sliderIndex = 0;
 
-    items[state.sliderIndex].style.display = "";
+    const currentItem = items[state.sliderIndex];
+    currentItem.style.display = "";
+    positionSliderArrows(currentItem);
 }
 
 function applyViewMode() {
     const isSlider = state.viewMode === "slider";
     videoGrid.classList.toggle("slider-view", isSlider);
-    sliderViewBtn.classList.toggle("active", isSlider);
+    sliderModeBtn.classList.toggle("active", isSlider);
+    gridModeBtn.classList.toggle("active", !isSlider);
     updateToolbarVisibility();
     applyFilters();
 }
@@ -293,11 +313,9 @@ function syncMuteToggleBtn() {
     const videos = Array.from(videoGrid.querySelectorAll("video"));
     const allMuted = videos.length === 0 || videos.every((video) => video.muted);
     muteToggleBtn.classList.toggle("active", allMuted);
-    muteToggleBtn.innerHTML =
-        icon(allMuted ? "speakerOn" : "speakerOff") +
-        '<span class="btn-label">' +
-        (allMuted ? "Unmute All" : "Mute All") +
-        "</span>";
+    muteToggleBtn.innerHTML = icon(allMuted ? "speakerOn" : "speakerOff");
+    muteToggleBtn.title = allMuted ? "Unmute All" : "Mute All";
+    muteToggleBtn.setAttribute("aria-label", muteToggleBtn.title);
 }
 
 function applyTheme(theme) {
@@ -599,6 +617,9 @@ dimensionFilter.addEventListener("change", () => {
 sizeSelect.addEventListener("change", () => {
     state.sizeScale = Number(sizeSelect.value);
     applySizeToAll();
+    if (state.viewMode === "slider") {
+        positionSliderArrows(getSliderItems()[state.sliderIndex]);
+    }
     saveControlsState();
 });
 
@@ -638,9 +659,17 @@ scrubberBtn.addEventListener("click", () => {
     saveControlsState();
 });
 
-sliderViewBtn.addEventListener("click", () => {
-    state.viewMode = state.viewMode === "slider" ? "grid" : "slider";
+sliderModeBtn.addEventListener("click", () => {
+    if (state.viewMode === "slider") return;
+    state.viewMode = "slider";
     state.sliderIndex = 0;
+    applyViewMode();
+    saveControlsState();
+});
+
+gridModeBtn.addEventListener("click", () => {
+    if (state.viewMode === "grid") return;
+    state.viewMode = "grid";
     applyViewMode();
     saveControlsState();
 });
@@ -728,6 +757,12 @@ document.addEventListener("keydown", (e) => {
 
     e.preventDefault();
     toggleAllPlayback();
+});
+
+window.addEventListener("resize", () => {
+    if (state.viewMode === "slider") {
+        positionSliderArrows(getSliderItems()[state.sliderIndex]);
+    }
 });
 
 initTheme();
