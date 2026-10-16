@@ -1220,3 +1220,28 @@ body:has(#globalScrubberBar:not([hidden])) .panel {
     width: 18px;
     height: 18px;
 }
+
+.safe-zone-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.safe-zone-overlay > div {
+    position: absolute;
+    background: rgba(255, 255, 0, 0.4);
+}
+
+.safe-zone-select {
+    min-width: 0;
+    max-width: 96px;
+    padding: 2px 4px;
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}

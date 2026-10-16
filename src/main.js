@@ -54,6 +54,49 @@ function escapeHtml(value) {
         .replace(/'/g, "&#39;");
 }
 
+const SAFE_ZONE_PLATFORMS = {
+    none: "None",
+    meta_stories: "Meta Stories",
+    meta_reels: "Meta Reels",
+    tiktok: "TikTok",
+};
+
+const SAFE_ZONE_OPTIONS = Object.entries(SAFE_ZONE_PLATFORMS)
+    .map(([value, label]) => `<option value="${value}">${label}</option>`)
+    .join("");
+
+// Portrait bars (% of frame) per platform; icon is an extra [x, y, w, h] block.
+const PORTRAIT_ZONES = {
+    meta_stories: { top: 14, bottom: 20, side: 6 },
+    meta_reels: { top: 14, bottom: 35, side: 6, icon: [83, 60, 11, 5] },
+    tiktok: { top: 13.09, bottom: 33.5, side: 11, icon: [78, 18.7, 11, 47.8] },
+};
+
+// Returns [x, y, w, h] rectangles (in %) to highlight for a platform at an aspect ratio.
+function safeZoneRects(platform, aspect) {
+    if (platform === "none" || !aspect) return [];
+    let zone;
+    if (aspect < 0.8) {
+        zone = PORTRAIT_ZONES[platform];
+    } else if (aspect < 0.95) {
+        zone = { top: 4.81, bottom: 4.81, side: 6.02 };
+    } else if (aspect <= 20 / 19) {
+        zone = { top: 4.35, bottom: 4.35, side: 4.35 };
+    } else {
+        zone = { top: 9.26, bottom: 9.26, side: 5.21 };
+    }
+    const { top, bottom, side, icon } = zone;
+    const midH = 100 - top - bottom;
+    const rects = [
+        [0, 0, 100, top],
+        [0, 100 - bottom, 100, bottom],
+        [0, top, side, midH],
+        [100 - side, top, side, midH],
+    ];
+    if (icon) rects.push(icon);
+    return rects;
+}
+
 const RELEASE_NOTES = [
     {
         date: "October 16, 2026",
@@ -224,6 +267,13 @@ app.innerHTML = `
                         <button type="button" class="spinner-btn" data-step="1" aria-label="Increase per row">&plus;</button>
                     </div>
                 </div>
+                <div class="sort-group">
+                    <label for="safeZoneAll">Safe zone</label>
+                    <select id="safeZoneAll">
+                        <option value="mixed" disabled hidden>Mixed</option>
+                        ${SAFE_ZONE_OPTIONS}
+                    </select>
+                </div>
                 <button id="refreshBtn" class="chip-button" type="button">${icon("refresh")}<span class="btn-label">Replay</span></button>
                 <button id="muteToggleBtn" class="chip-button chip-button-icon" type="button" title="Mute All" aria-label="Mute All">${icon("speakerOff")}</button>
                 <button id="unfocusAllBtn" class="chip-button chip-button-icon" type="button" title="Unfocus All" aria-label="Unfocus All">${icon("focus")}</button>
@@ -289,6 +339,7 @@ const sizeSpinner = document.getElementById("sizeSpinner");
 const perRowInput = document.getElementById("perRowInput");
 const perRowSpinner = document.getElementById("perRowSpinner");
 const refreshBtn = document.getElementById("refreshBtn");
+const safeZoneAll = document.getElementById("safeZoneAll");
 const muteToggleBtn = document.getElementById("muteToggleBtn");
 const unfocusAllBtn = document.getElementById("unfocusAllBtn");
 const labelsBtn = document.getElementById("labelsBtn");
@@ -756,11 +807,38 @@ function buildItem(item) {
         video.play().catch(() => {});
     });
 
+    const safeZoneSelect = document.createElement("select");
+    safeZoneSelect.className = "safe-zone-select";
+    safeZoneSelect.title = "Safe zone";
+    safeZoneSelect.setAttribute("aria-label", "Safe zone");
+    safeZoneSelect.innerHTML = SAFE_ZONE_OPTIONS;
+    safeZoneSelect.value = safeZoneAll.value in SAFE_ZONE_PLATFORMS ? safeZoneAll.value : "none";
+
+    const safeZoneOverlay = document.createElement("div");
+    safeZoneOverlay.className = "safe-zone-overlay";
+
+    function renderSafeZone() {
+        safeZoneOverlay.replaceChildren();
+        const aspect = video.videoWidth / video.videoHeight;
+        safeZoneRects(safeZoneSelect.value, aspect).forEach(([x, y, w, h]) => {
+            const block = document.createElement("div");
+            block.style.cssText = `left:${x}%;top:${y}%;width:${w}%;height:${h}%`;
+            safeZoneOverlay.appendChild(block);
+        });
+    }
+
+    safeZoneSelect.addEventListener("change", () => {
+        renderSafeZone();
+        syncSafeZoneAll();
+    });
+    video.addEventListener("loadedmetadata", renderSafeZone);
+
     const videoToolbar = document.createElement("div");
     videoToolbar.className = "video-toolbar";
     videoToolbar.appendChild(muteBtn);
     videoToolbar.appendChild(playPauseBtn);
     videoToolbar.appendChild(replayBtn);
+    videoToolbar.appendChild(safeZoneSelect);
     videoToolbar.appendChild(focusBtn);
 
     const scrubber = document.createElement("input");
@@ -853,6 +931,7 @@ function buildItem(item) {
     const videoFrame = document.createElement("div");
     videoFrame.className = "video-frame";
     videoFrame.appendChild(video);
+    videoFrame.appendChild(safeZoneOverlay);
     videoFrame.appendChild(clickIndicator);
 
     wrapper.appendChild(videoFrame);
@@ -1076,6 +1155,24 @@ perRowInput.addEventListener("change", () => {
     state.perRow = clampInput(perRowInput);
     applyPerRow();
     saveControlsState();
+});
+
+function syncSafeZoneAll() {
+    const values = new Set(
+        Array.from(videoGrid.querySelectorAll(".safe-zone-select"), (el) => el.value),
+    );
+    if (values.size === 1) {
+        safeZoneAll.value = values.values().next().value;
+    } else if (values.size > 1) {
+        safeZoneAll.value = "mixed";
+    }
+}
+
+safeZoneAll.addEventListener("change", () => {
+    videoGrid.querySelectorAll(".safe-zone-select").forEach((el) => {
+        el.value = safeZoneAll.value;
+        el.dispatchEvent(new Event("change"));
+    });
 });
 
 refreshBtn.addEventListener("click", () => {
