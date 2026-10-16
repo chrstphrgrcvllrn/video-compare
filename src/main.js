@@ -56,6 +56,12 @@ function escapeHtml(value) {
 
 const RELEASE_NOTES = [
     {
+        date: "October 16, 2026",
+        items: [
+            "Added a floating scrubber at the bottom of the screen that scrubs all videos together: dragging pauses them, and releasing resumes the ones that were playing",
+        ],
+    },
+    {
         date: "September 8, 2026",
         items: [
             "Added focus mode to spotlight one or more videos for comparison, plus Unfocus All",
@@ -238,6 +244,10 @@ app.innerHTML = `
                 <button id="sliderPrevBtn" class="slider-arrow slider-arrow-prev" type="button" title="Previous video" aria-label="Previous video" hidden>${icon("chevronLeft")}</button>
                 <div id="videoGrid"></div>
                 <button id="sliderNextBtn" class="slider-arrow slider-arrow-next" type="button" title="Next video" aria-label="Next video" hidden>${icon("chevronRight")}</button>
+                <div id="globalScrubberBar" hidden>
+                    <input id="globalScrubber" class="scrubber" type="range" min="0" max="1000" step="1" value="0" aria-label="Scrub all videos" />
+                    <span id="globalTimeLabel" class="time-label">0:00</span>
+                </div>
             </div>
         </div>
 
@@ -287,6 +297,9 @@ const gridModeBtn = document.getElementById("gridModeBtn");
 const sliderPrevBtn = document.getElementById("sliderPrevBtn");
 const sliderNextBtn = document.getElementById("sliderNextBtn");
 const videoGrid = document.getElementById("videoGrid");
+const globalScrubberBar = document.getElementById("globalScrubberBar");
+const globalScrubber = document.getElementById("globalScrubber");
+const globalTimeLabel = document.getElementById("globalTimeLabel");
 const videoStage = document.getElementById("videoStage");
 const playbackToast = document.getElementById("playbackToast");
 const playbackToastIcon = document.getElementById("playbackToastIcon");
@@ -420,7 +433,9 @@ function applySizeToAll() {
 function applyPerRow() {
     const active = isPerRowGridActive();
     videoGrid.classList.toggle("per-row-active", active);
-    videoGrid.style.gridTemplateColumns = active ? "repeat(" + state.perRow + ", minmax(0, 1fr))" : "";
+    videoGrid.style.gridTemplateColumns = active
+        ? "repeat(" + state.perRow + ", minmax(0, 1fr))"
+        : "";
 }
 
 function matchesDimensionFilter(el) {
@@ -453,7 +468,13 @@ function getSliderItems() {
     return Array.from(videoGrid.querySelectorAll(".video-item")).filter(matchesActiveFilters);
 }
 
-const SLIDE_CLASSES = ["slide-anim", "slide-from-right", "slide-from-left", "slide-exit-left", "slide-exit-right"];
+const SLIDE_CLASSES = [
+    "slide-anim",
+    "slide-from-right",
+    "slide-from-left",
+    "slide-exit-left",
+    "slide-exit-right",
+];
 
 function resetSlideClasses(el) {
     el.classList.remove(...SLIDE_CLASSES);
@@ -483,7 +504,7 @@ function slideToIndex(step) {
     if (items.length === 0) return;
 
     const outgoing = items[state.sliderIndex] || null;
-    const newIndex = ((state.sliderIndex + step) % items.length + items.length) % items.length;
+    const newIndex = (((state.sliderIndex + step) % items.length) + items.length) % items.length;
     const incoming = items[newIndex];
 
     state.sliderIndex = newIndex;
@@ -1296,6 +1317,86 @@ function toggleAllPlayback() {
 
     showPlaybackToast(!anyPlaying);
 }
+
+function scrubTargets() {
+    const scope = videoGrid.classList.contains("focus-mode")
+        ? ".video-item.focused video"
+        : "video";
+    return Array.from(videoGrid.querySelectorAll(scope)).filter((video) => video.duration > 0);
+}
+
+let globalScrubbing = false;
+let resumeAfterScrub = [];
+
+function syncGlobalScrubber() {
+    const videos = scrubTargets();
+    globalScrubberBar.hidden = videos.length === 0;
+    if (globalScrubbing || videos.length === 0) return;
+    const ref = videos.reduce((a, b) => (b.duration > a.duration ? b : a));
+    globalScrubber.value = String((ref.currentTime / ref.duration) * 1000);
+    globalTimeLabel.textContent = formatTime(ref.currentTime) + " / " + formatTime(ref.duration);
+}
+
+function endGlobalScrub() {
+    if (!globalScrubbing) return;
+    globalScrubbing = false;
+    cancelAnimationFrame(scrubRaf);
+    scrubRaf = 0;
+    applyScrub(true);
+    resumeAfterScrub.forEach((video) => video.play().catch(() => {}));
+    resumeAfterScrub = [];
+}
+
+globalScrubber.addEventListener("pointerdown", () => {
+    globalScrubbing = true;
+    resumeAfterScrub = scrubTargets().filter((video) => !video.paused);
+    resumeAfterScrub.forEach((video) => video.pause());
+});
+let scrubFrac = 0;
+let scrubRaf = 0;
+
+// Seek only videos that aren't mid-seek, using the latest value; re-run when
+// they finish so the picture always catches up to the handle (no seek queue).
+function applyScrub(precise) {
+    scrubRaf = 0;
+    let pending = false;
+    scrubTargets().forEach((video) => {
+        if (video.seeking && !precise) {
+            pending = true;
+            return;
+        }
+        const t = scrubFrac * video.duration;
+        if (!precise && typeof video.fastSeek === "function") {
+            video.fastSeek(t);
+        } else {
+            video.currentTime = t;
+        }
+    });
+    if (pending) scheduleScrub();
+}
+
+function scheduleScrub() {
+    if (!scrubRaf) scrubRaf = requestAnimationFrame(() => applyScrub(false));
+}
+
+globalScrubber.addEventListener("input", () => {
+    scrubFrac = Number(globalScrubber.value) / 1000;
+    const videos = scrubTargets();
+    const ref = videos.reduce((a, b) => (b.duration > a.duration ? b : a), videos[0]);
+    if (ref) {
+        globalTimeLabel.textContent =
+            formatTime(scrubFrac * ref.duration) + " / " + formatTime(ref.duration);
+    }
+    if (globalScrubbing) {
+        scheduleScrub();
+    } else {
+        applyScrub(true);
+    }
+});
+window.addEventListener("pointerup", endGlobalScrub);
+window.addEventListener("pointercancel", endGlobalScrub);
+videoGrid.addEventListener("timeupdate", syncGlobalScrubber, true);
+videoGrid.addEventListener("loadedmetadata", syncGlobalScrubber, true);
 
 document.addEventListener("keydown", (e) => {
     if (e.code !== "Space") return;
