@@ -868,6 +868,7 @@ body {
     color: var(--text-tertiary);
     font-size: 12px;
     margin-top: 4px;
+    font-variant-numeric: tabular-nums;
 }
 
 .video-name {

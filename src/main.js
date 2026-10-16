@@ -339,11 +339,10 @@ function extractName(filename) {
 }
 
 function formatTime(seconds) {
-    if (!isFinite(seconds) || seconds < 0) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60)
-        .toString()
-        .padStart(2, "0");
+    if (!isFinite(seconds) || seconds < 0) return "0:00.0000";
+    const ms = Math.floor(seconds * 10000);
+    const m = Math.floor(ms / 600000);
+    const s = ((ms % 600000) / 10000).toFixed(4).padStart(7, "0");
     return m + ":" + s;
 }
 
@@ -772,7 +771,7 @@ function buildItem(item) {
 
     const timeLabel = document.createElement("div");
     timeLabel.className = "time-label";
-    timeLabel.textContent = "0:00 / 0:00";
+    timeLabel.textContent = "0:00.0000 / 0:00.0000";
 
     const nameEl = document.createElement("div");
     nameEl.className = "video-name";
