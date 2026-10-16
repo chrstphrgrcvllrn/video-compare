@@ -245,6 +245,7 @@ app.innerHTML = `
                 <div id="videoGrid"></div>
                 <button id="sliderNextBtn" class="slider-arrow slider-arrow-next" type="button" title="Next video" aria-label="Next video" hidden>${icon("chevronRight")}</button>
                 <div id="globalScrubberBar" hidden>
+                    <button id="globalPlayPauseBtn" class="play-pause-button" type="button" title="Pause" aria-label="Pause">${icon("pause")}</button>
                     <input id="globalScrubber" class="scrubber" type="range" min="0" max="1000" step="1" value="0" aria-label="Scrub all videos" />
                     <span id="globalTimeLabel" class="time-label">0:00</span>
                 </div>
@@ -299,6 +300,7 @@ const sliderNextBtn = document.getElementById("sliderNextBtn");
 const videoGrid = document.getElementById("videoGrid");
 const globalScrubberBar = document.getElementById("globalScrubberBar");
 const globalScrubber = document.getElementById("globalScrubber");
+const globalPlayPauseBtn = document.getElementById("globalPlayPauseBtn");
 const globalTimeLabel = document.getElementById("globalTimeLabel");
 const videoStage = document.getElementById("videoStage");
 const playbackToast = document.getElementById("playbackToast");
@@ -1335,6 +1337,20 @@ function syncGlobalScrubber() {
     globalScrubber.value = String((ref.currentTime / ref.duration) * 1000);
     globalTimeLabel.textContent = formatTime(ref.currentTime) + " / " + formatTime(ref.duration);
 }
+
+function syncGlobalPlayPause() {
+    const playing = scrubTargets().some((video) => !video.paused);
+    globalPlayPauseBtn.innerHTML = icon(playing ? "pause" : "play");
+    globalPlayPauseBtn.title = playing ? "Pause" : "Play";
+    globalPlayPauseBtn.setAttribute("aria-label", globalPlayPauseBtn.title);
+}
+
+globalPlayPauseBtn.addEventListener("click", () => {
+    toggleAllPlayback();
+    syncGlobalPlayPause();
+});
+videoGrid.addEventListener("play", syncGlobalPlayPause, true);
+videoGrid.addEventListener("pause", syncGlobalPlayPause, true);
 
 function endGlobalScrub() {
     if (!globalScrubbing) return;
